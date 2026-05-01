@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Spence</title>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22Spence%22,%22short_name%22:%22Spence%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23f8f8f6%22,%22theme_color%22:%22%231c1c1a%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%231c1c1a'/%3E%3Ctext x='256' y='340' font-size='280' text-anchor='middle' fill='%23f8f8f6' font-family='serif' font-style='italic'%3ES%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22512x512%22,%22type%22:%22image/svg+xml%22}]}">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Spence">
+<meta name="theme-color" content="#1c1c1a">
 <link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600&family=Lora:ital@1&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -292,14 +297,60 @@ nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400
 </div>
 
 <script>
+// ── SUPABASE ──────────────────────────────────────────────────────────────────
+const SUPA_URL = 'https://vspjzyqtkbydyddtxyxn.supabase.co';
+const SUPA_KEY = 'sb_publishable_UajbMmLqT8hp5leTmwJzhg_7i02wXII';
+
+async function supaGet(table){
+  try {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?select=data&limit=1`, {
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
+    });
+    const rows = await r.json();
+    if(rows&&rows.length>0&&rows[0].data) return rows[0].data;
+  } catch(e){}
+  return null;
+}
+
+async function supaSet(table, data){
+  try {
+    // upsert: delete all then insert one row with all data
+    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method:'DELETE',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},
+    });
+    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
+      body: JSON.stringify({data})
+    });
+    // also cache locally
+    localStorage.setItem('spence-'+table, JSON.stringify(data));
+  } catch(e){
+    // offline: save locally only
+    localStorage.setItem('spence-'+table, JSON.stringify(data));
+  }
+}
+
 // migrate old key if needed
 if(!localStorage.getItem('spence-items')&&localStorage.getItem('d10-items')){
   localStorage.setItem('spence-items',localStorage.getItem('d10-items'));
   localStorage.setItem('spence-cats',localStorage.getItem('d10-cats'));
 }
+
+// start with local cache, then load from supabase
 let cats  = JSON.parse(localStorage.getItem('spence-cats')  || 'null') || ['Bad','Haushalt','Kleidung','Küche','Sonstige'];
 let items = JSON.parse(localStorage.getItem('spence-items') || 'null') || makeDemo();
 let editId=null, selType=null, sortOutId=null, filt='all', curPage='list', showArch=false, draftCats=[];
+
+// load from supabase on start
+async function loadFromSupabase(){
+  const [remoteItems, remoteCats] = await Promise.all([supaGet('items'), supaGet('cats')]);
+  let changed = false;
+  if(remoteItems){items=remoteItems;localStorage.setItem('spence-items',JSON.stringify(items));changed=true;}
+  if(remoteCats){cats=remoteCats;localStorage.setItem('spence-cats',JSON.stringify(cats));changed=true;}
+  if(changed) render();
+}
 
 function makeDemo(){
   const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().split('T')[0];};
@@ -317,8 +368,8 @@ function makeDemo(){
 }
 
 function persist(){
-  localStorage.setItem('spence-items',JSON.stringify(items));
-  localStorage.setItem('spence-cats', JSON.stringify(cats));
+  supaSet('items', items);
+  supaSet('cats', cats);
 }
 function today(){return new Date().toISOString().split('T')[0];}
 function daysBetween(a,b){return Math.max(0,Math.floor((new Date(b)-new Date(a))/86400000));}
@@ -793,6 +844,7 @@ function saveCats(){
 
 refreshArchBtn();
 render();
+loadFromSupabase();
 </script>
 </body>
 </html>
