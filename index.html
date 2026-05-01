@@ -300,12 +300,12 @@ nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400
 // ── SUPABASE ──────────────────────────────────────────────────────────────────
 const SUPA_URL = 'https://vspjzyqtkbydyddtxyxn.supabase.co';
 const SUPA_KEY = 'sb_publishable_UajbMmLqT8hp5leTmwJzhg_7i02wXII';
+const HEADERS  = {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
 
 async function supaGet(table){
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?select=data&limit=1`, {
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY}
-    });
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.1&select=data`, {headers:HEADERS});
+    if(!r.ok) return null;
     const rows = await r.json();
     if(rows&&rows.length>0&&rows[0].data) return rows[0].data;
   } catch(e){}
@@ -314,20 +314,13 @@ async function supaGet(table){
 
 async function supaSet(table, data){
   try {
-    // upsert: delete all then insert one row with all data
-    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
-      method:'DELETE',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json'},
-    });
-    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+    const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
       method:'POST',
-      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},
-      body: JSON.stringify({data})
+      headers:HEADERS,
+      body: JSON.stringify({id:1, data})
     });
-    // also cache locally
     localStorage.setItem('spence-'+table, JSON.stringify(data));
   } catch(e){
-    // offline: save locally only
     localStorage.setItem('spence-'+table, JSON.stringify(data));
   }
 }
