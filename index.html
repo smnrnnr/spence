@@ -33,6 +33,10 @@ body{background:var(--bg);color:var(--text);font-family:'Karla',sans-serif;font-
 nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50;}
 nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400;}
 .nav-right{display:flex;gap:6px;align-items:center;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:background 0.3s;flex-shrink:0;}
+.sync-dot.syncing{background:var(--warn);animation:pulse 1s infinite;}
+.sync-dot.ok{background:var(--ok);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
 .btn-pill{background:none;border:1px solid var(--border2);color:var(--text2);font-family:'Karla',sans-serif;font-size:11px;padding:4px 9px;border-radius:20px;cursor:pointer;white-space:nowrap;}
 .btn-pill.on{background:var(--text);color:var(--bg);border-color:var(--text);}
 .btn-add{background:var(--text);color:var(--bg);border:none;width:30px;height:30px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding-bottom:1px;}
@@ -158,6 +162,7 @@ nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400
 <nav>
   <h1>Spence</h1>
   <div class="nav-right">
+    <div class="sync-dot" id="sync-dot"></div>
     <button class="btn-pill" onclick="openCatManager()">Kategorien</button>
     <button class="btn-pill on" id="archbtn" onclick="toggleArch()" style="display:none">Archiv</button>
     <button class="btn-add" onclick="openEditSheet(null)">+</button>
@@ -302,6 +307,13 @@ const SUPA_URL = 'https://vspjzyqtkbydyddtxyxn.supabase.co';
 const SUPA_KEY = 'sb_publishable_UajbMmLqT8hp5leTmwJzhg_7i02wXII';
 const HEADERS  = {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
 
+function setSyncing(on){
+  const d=document.getElementById('sync-dot');
+  if(!d)return;
+  d.className='sync-dot '+(on?'syncing':'ok');
+  if(!on) setTimeout(()=>{if(d.className==='sync-dot ok')d.className='sync-dot';},2000);
+}
+
 async function supaGet(table){
   try {
     const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.1&select=data`, {headers:HEADERS});
@@ -313,12 +325,13 @@ async function supaGet(table){
 }
 
 async function supaSet(table, data){
+  setSyncing(true);
   try {
     await fetch(`${SUPA_URL}/rest/v1/${table}`, {
       method:'POST', headers:HEADERS, body:JSON.stringify({id:1, data})
     });
-  } catch(e){}
-  // always cache locally
+    setSyncing(false);
+  } catch(e){setSyncing(false);}
   localStorage.setItem('spence-'+table, JSON.stringify(data));
 }
 
@@ -418,12 +431,13 @@ function persist(){
   supaSet('cats', cats);
 }
 
-// load from supabase on start — always prefer remote over local cache
 async function loadFromSupabase(){
+  setSyncing(true);
   const [remoteItems, remoteCats] = await Promise.all([supaGet('items'), supaGet('cats')]);
   let changed = false;
   if(remoteItems){items=remoteItems;localStorage.setItem('spence-items',JSON.stringify(items));changed=true;}
   if(remoteCats){cats=remoteCats;localStorage.setItem('spence-cats',JSON.stringify(cats));changed=true;}
+  setSyncing(false);
   if(changed) render();
 }
 function today(){return new Date().toISOString().split('T')[0];}
