@@ -314,15 +314,69 @@ async function supaGet(table){
 
 async function supaSet(table, data){
   try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
-      method:'POST',
-      headers:HEADERS,
-      body: JSON.stringify({id:1, data})
+    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+      method:'POST', headers:HEADERS, body:JSON.stringify({id:1, data})
     });
     localStorage.setItem('spence-'+table, JSON.stringify(data));
   } catch(e){
     localStorage.setItem('spence-'+table, JSON.stringify(data));
   }
+}
+
+// ── REALTIME ──────────────────────────────────────────────────────────────────
+let realtimeWs = null;
+let realtimePingInterval = null;
+
+function connectRealtime(){
+  const wsUrl = `wss://vspjzyqtkbydyddtxyxn.supabase.co/realtime/v1/websocket?apikey=${SUPA_KEY}&vsn=1.0.0`;
+  try {
+    realtimeWs = new WebSocket(wsUrl);
+
+    realtimeWs.onopen = () => {
+      // join both tables
+      ['items','cats'].forEach(table => {
+        realtimeWs.send(JSON.stringify({
+          topic: `realtime:public:${table}`,
+          event: 'phx_join',
+          payload: {config:{broadcast:{self:false},presence:{key:''},postgres_changes:[{event:'*',schema:'public',table}]}},
+          ref: table
+        }));
+      });
+      // heartbeat every 25s
+      realtimePingInterval = setInterval(()=>{
+        if(realtimeWs.readyState===WebSocket.OPEN)
+          realtimeWs.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'ping'}));
+      }, 25000);
+    };
+
+    realtimeWs.onmessage = async (e) => {
+      try {
+        const msg = JSON.parse(e.data);
+        // postgres change event
+        if(msg.event === 'postgres_changes' || (msg.payload && msg.payload.data && msg.payload.data.type)){
+          const table = msg.topic?.replace('realtime:public:','');
+          if(table==='items'||table==='cats'){
+            const remote = await supaGet(table);
+            if(remote){
+              if(table==='items'){items=remote;localStorage.setItem('spence-items',JSON.stringify(items));}
+              if(table==='cats'){cats=remote;localStorage.setItem('spence-cats',JSON.stringify(cats));}
+              render();
+            }
+          }
+        }
+      } catch(err){}
+    };
+
+    realtimeWs.onclose = () => {
+      clearInterval(realtimePingInterval);
+      // reconnect after 3s
+      setTimeout(connectRealtime, 3000);
+    };
+
+    realtimeWs.onerror = () => {
+      realtimeWs.close();
+    };
+  } catch(e){}
 }
 
 // migrate old key if needed
@@ -838,6 +892,7 @@ function saveCats(){
 refreshArchBtn();
 render();
 loadFromSupabase();
+connectRealtime();
 </script>
 </body>
 </html>
