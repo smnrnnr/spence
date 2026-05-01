@@ -317,66 +317,74 @@ async function supaSet(table, data){
     await fetch(`${SUPA_URL}/rest/v1/${table}`, {
       method:'POST', headers:HEADERS, body:JSON.stringify({id:1, data})
     });
-    localStorage.setItem('spence-'+table, JSON.stringify(data));
-  } catch(e){
-    localStorage.setItem('spence-'+table, JSON.stringify(data));
-  }
+  } catch(e){}
+  // always cache locally
+  localStorage.setItem('spence-'+table, JSON.stringify(data));
 }
 
 // ── REALTIME ──────────────────────────────────────────────────────────────────
-let realtimeWs = null;
-let realtimePingInterval = null;
+let rtWs = null, rtPing = null, rtRef = 0;
 
 function connectRealtime(){
-  const wsUrl = `wss://vspjzyqtkbydyddtxyxn.supabase.co/realtime/v1/websocket?apikey=${SUPA_KEY}&vsn=1.0.0`;
+  if(rtWs) return;
   try {
-    realtimeWs = new WebSocket(wsUrl);
+    rtWs = new WebSocket(`wss://vspjzyqtkbydyddtxyxn.supabase.co/realtime/v1/websocket?apikey=${SUPA_KEY}&vsn=1.0.0`);
 
-    realtimeWs.onopen = () => {
-      // join both tables
-      ['items','cats'].forEach(table => {
-        realtimeWs.send(JSON.stringify({
-          topic: `realtime:public:${table}`,
-          event: 'phx_join',
-          payload: {config:{broadcast:{self:false},presence:{key:''},postgres_changes:[{event:'*',schema:'public',table}]}},
-          ref: table
+    rtWs.onopen = () => {
+      // subscribe to postgres changes on both tables
+      ['items','cats'].forEach(t => {
+        rtWs.send(JSON.stringify({
+          topic:`realtime:public:${t}`,
+          event:'phx_join',
+          payload:{
+            config:{
+              postgres_changes:[{event:'*',schema:'public',table:t}]
+            }
+          },
+          ref: String(++rtRef)
         }));
       });
-      // heartbeat every 25s
-      realtimePingInterval = setInterval(()=>{
-        if(realtimeWs.readyState===WebSocket.OPEN)
-          realtimeWs.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:'ping'}));
-      }, 25000);
+      rtPing = setInterval(()=>{
+        if(rtWs&&rtWs.readyState===1)
+          rtWs.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++rtRef)}));
+      }, 20000);
     };
 
-    realtimeWs.onmessage = async (e) => {
+    rtWs.onmessage = async (e) => {
       try {
         const msg = JSON.parse(e.data);
-        // postgres change event
-        if(msg.event === 'postgres_changes' || (msg.payload && msg.payload.data && msg.payload.data.type)){
-          const table = msg.topic?.replace('realtime:public:','');
-          if(table==='items'||table==='cats'){
-            const remote = await supaGet(table);
-            if(remote){
-              if(table==='items'){items=remote;localStorage.setItem('spence-items',JSON.stringify(items));}
-              if(table==='cats'){cats=remote;localStorage.setItem('spence-cats',JSON.stringify(cats));}
-              render();
-            }
-          }
+        // any postgres change event → reload that table from server
+        if(msg.event==='postgres_changes'||(msg.payload&&msg.payload.type==='broadcast')){
+          const t = msg.topic?.split(':')[2]; // realtime:public:items → items
+          if(t==='items'||t==='cats') await reloadTable(t);
+        }
+        // also catch INSERT/UPDATE/DELETE events wrapped differently
+        if(msg.payload&&msg.payload.data&&msg.payload.data.table){
+          await reloadTable(msg.payload.data.table);
         }
       } catch(err){}
     };
 
-    realtimeWs.onclose = () => {
-      clearInterval(realtimePingInterval);
-      // reconnect after 3s
+    rtWs.onclose = () => {
+      rtWs=null; clearInterval(rtPing);
       setTimeout(connectRealtime, 3000);
     };
-
-    realtimeWs.onerror = () => {
-      realtimeWs.close();
-    };
+    rtWs.onerror = () => { rtWs?.close(); };
   } catch(e){}
+}
+
+async function reloadTable(table){
+  const remote = await supaGet(table);
+  if(!remote) return;
+  if(table==='items'){
+    items=remote;
+    localStorage.setItem('spence-items',JSON.stringify(items));
+  }
+  if(table==='cats'){
+    cats=remote;
+    localStorage.setItem('spence-cats',JSON.stringify(cats));
+  }
+  render();
 }
 
 // migrate old key if needed
@@ -389,15 +397,6 @@ if(!localStorage.getItem('spence-items')&&localStorage.getItem('d10-items')){
 let cats  = JSON.parse(localStorage.getItem('spence-cats')  || 'null') || ['Bad','Haushalt','Kleidung','Küche','Sonstige'];
 let items = JSON.parse(localStorage.getItem('spence-items') || 'null') || makeDemo();
 let editId=null, selType=null, sortOutId=null, filt='all', curPage='list', showArch=false, draftCats=[];
-
-// load from supabase on start
-async function loadFromSupabase(){
-  const [remoteItems, remoteCats] = await Promise.all([supaGet('items'), supaGet('cats')]);
-  let changed = false;
-  if(remoteItems){items=remoteItems;localStorage.setItem('spence-items',JSON.stringify(items));changed=true;}
-  if(remoteCats){cats=remoteCats;localStorage.setItem('spence-cats',JSON.stringify(cats));changed=true;}
-  if(changed) render();
-}
 
 function makeDemo(){
   const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().split('T')[0];};
@@ -417,6 +416,15 @@ function makeDemo(){
 function persist(){
   supaSet('items', items);
   supaSet('cats', cats);
+}
+
+// load from supabase on start — always prefer remote over local cache
+async function loadFromSupabase(){
+  const [remoteItems, remoteCats] = await Promise.all([supaGet('items'), supaGet('cats')]);
+  let changed = false;
+  if(remoteItems){items=remoteItems;localStorage.setItem('spence-items',JSON.stringify(items));changed=true;}
+  if(remoteCats){cats=remoteCats;localStorage.setItem('spence-cats',JSON.stringify(cats));changed=true;}
+  if(changed) render();
 }
 function today(){return new Date().toISOString().split('T')[0];}
 function daysBetween(a,b){return Math.max(0,Math.floor((new Date(b)-new Date(a))/86400000));}
