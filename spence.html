@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Spence</title>
+<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600&family=Lora:ital@1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f8f8f6;
+  --surface: #fff;
+  --border: #e4e4e0;
+  --border2: #d0d0ca;
+  --text: #1c1c1a;
+  --text2: #6b6b66;
+  --text3: #a8a8a2;
+  --wear: #b85c2a;
+  --durable: #2a6b48;
+  --consumable: #2a4a8a;
+  --warn: #c87820;
+  --danger: #b83030;
+  --ok: #3a8a58;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{max-width:100%;overflow-x:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'Karla',sans-serif;font-size:14px;min-height:100vh;}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50;}
+nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400;}
+.nav-right{display:flex;gap:6px;align-items:center;}
+.btn-pill{background:none;border:1px solid var(--border2);color:var(--text2);font-family:'Karla',sans-serif;font-size:11px;padding:4px 9px;border-radius:20px;cursor:pointer;white-space:nowrap;}
+.btn-pill.on{background:var(--text);color:var(--bg);border-color:var(--text);}
+.btn-add{background:var(--text);color:var(--bg);border:none;width:30px;height:30px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding-bottom:1px;}
+
+.tabs{display:flex;padding:0 16px;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;}
+.tab{padding:10px 13px 9px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:'Karla',sans-serif;}
+.tab.active{color:var(--text);border-bottom-color:var(--text);}
+.tab.wear.active{color:var(--wear);border-bottom-color:var(--wear);}
+.tab.durable.active{color:var(--durable);border-bottom-color:var(--durable);}
+.tab.consumable.active{color:var(--consumable);border-bottom-color:var(--consumable);}
+.tab.vorschau.active{color:var(--warn);border-bottom-color:var(--warn);}
+
+.page{display:none;padding-bottom:80px;}
+.page.active{display:block;}
+
+.section-header{display:flex;align-items:center;gap:8px;padding:12px 16px 5px;position:sticky;top:86px;background:var(--bg);z-index:10;}
+.section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);}
+.section-line{flex:1;height:1px;background:var(--border);}
+
+.cat-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 4px;}
+.cat-name{font-size:11px;color:var(--text3);}
+.cat-count{font-size:10px;color:var(--text3);}
+
+/* ROW */
+.item-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);gap:10px;cursor:pointer;transition:background 0.12s;user-select:none;}
+.item-row:active{background:#f0f0ec;}
+.item-row.stock-row{background:var(--bg);}
+.item-row.stock-row:active{background:#eeeee8;}
+.item-row.archived-row{opacity:0.38;}
+
+.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
+.sdot.ok{background:var(--ok);}
+.sdot.warn{background:var(--warn);}
+.sdot.danger{background:var(--danger);}
+.sdot.idle{background:var(--border2);}
+.sdot.off{background:var(--text3);}
+
+.inames{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;} /* increased gap */
+.ikind{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+.iproduct{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
+.stock-row .ikind{font-weight:400;color:var(--text2);}
+.archived-row .ikind{text-decoration:line-through;color:var(--text3);}
+
+.iinfo{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.chip{font-size:12px;color:var(--text2);white-space:nowrap;}
+.chip.warn{color:var(--warn);font-weight:600;}
+.chip.danger{color:var(--danger);font-weight:600;}
+.chip.hi{color:var(--durable);}
+.chip.muted{color:var(--text3);}
+.chip.idle{color:var(--text3);font-style:italic;}
+.chip.frozen{color:var(--durable);font-style:italic;}
+.chevron{color:var(--text3);font-size:12px;flex-shrink:0;}
+
+.empty{padding:32px 16px;text-align:center;color:var(--text3);font-size:13px;}
+
+/* VORSCHAU */
+.vorschau-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);gap:12px;cursor:pointer;}
+.vr-names{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
+.vr-kind{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vr-product{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.vr-right{flex-shrink:0;text-align:right;}
+.vr-days{font-size:14px;font-weight:600;}
+.vr-days.danger{color:var(--danger);}
+.vr-days.warn{color:var(--warn);}
+.vr-days.ok{color:var(--text2);}
+.vr-label{font-size:10px;color:var(--text3);margin-top:1px;}
+.vr-bar-wrap{width:48px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:5px;margin-left:auto;}
+.vr-bar{height:100%;border-radius:2px;}
+.vr-bar.ok{background:var(--consumable);}
+.vr-bar.warn{background:var(--warn);}
+.vr-bar.danger{background:var(--danger);}
+
+/* OVERLAY + SHEET */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;align-items:flex-end;justify-content:center;}
+.overlay.open{display:flex;}
+.sheet{background:var(--surface);width:100%;max-width:480px;border-radius:12px 12px 0 0;padding:24px 16px 36px;max-height:90vh;overflow-y:auto;overflow-x:hidden;}
+.sheet-title{font-family:'Lora',serif;font-style:italic;font-size:19px;font-weight:400;margin-bottom:18px;}
+
+.field{margin-bottom:13px;}
+.field label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text3);margin-bottom:5px;}
+.field input,.field select{width:100%;min-width:0;padding:9px 11px;border:1px solid var(--border2);background:var(--bg);font-family:'Karla',sans-serif;font-size:16px;color:var(--text);border-radius:5px;outline:none;}
+.field input:focus,.field select:focus{border-color:var(--text);}
+.field-note{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4;}
+.field-calc{font-size:12px;color:var(--durable);margin-top:5px;min-height:16px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+.type-row{display:flex;gap:6px;margin-bottom:14px;}
+.tbtn{flex:1;padding:8px 4px;border:1px solid var(--border2);background:var(--bg);font-family:'Karla',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--text2);border-radius:5px;cursor:pointer;text-align:center;transition:all 0.12s;}
+.tbtn.on.wear{background:var(--wear);color:#fff;border-color:var(--wear);}
+.tbtn.on.durable{background:var(--durable);color:#fff;border-color:var(--durable);}
+.tbtn.on.consumable{background:var(--consumable);color:#fff;border-color:var(--consumable);}
+
+.cond{display:none;}
+.cond.show{display:block;}
+
+.save-row{display:flex;gap:8px;margin-top:20px;}
+.sbtn{flex:1;padding:11px;border-radius:6px;font-family:'Karla',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);}
+.sbtn.primary{background:var(--text);color:var(--bg);border-color:var(--text);}
+
+.action-divider{margin:20px 0 14px;border:none;border-top:1px solid var(--border);}
+.action-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px;}
+.action-btns{display:flex;flex-direction:column;gap:6px;}
+.abtn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);border-radius:6px;font-family:'Karla',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;text-align:left;}
+.abtn:active{background:var(--border);}
+.abtn.primary-action{color:var(--text);border-color:var(--border2);}
+.abtn.danger-action{color:var(--danger);border-color:var(--danger);}
+.abtn .aico{width:20px;text-align:center;flex-shrink:0;}
+
+.sortout-info{background:var(--bg);border-radius:6px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.6;}
+.sortout-info strong{color:var(--text);}
+
+.cat-mgr-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+.cat-mgr-item input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--border2);background:var(--bg);font-family:'Karla',sans-serif;font-size:14px;color:var(--text);border-radius:4px;outline:none;}
+.cat-del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1;flex-shrink:0;}
+.cat-del-btn:hover{color:var(--danger);}
+.cat-add-row{display:flex;gap:8px;margin-top:12px;}
+.cat-add-row input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--border2);background:var(--bg);font-family:'Karla',sans-serif;font-size:13px;color:var(--text);border-radius:5px;outline:none;}
+.cat-add-row button{padding:8px 14px;background:var(--text);color:var(--bg);border:none;border-radius:5px;font-family:'Karla',sans-serif;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;}
+</style>
+</head>
+<body>
+
+<nav>
+  <h1>Spence</h1>
+  <div class="nav-right">
+    <button class="btn-pill" onclick="openCatManager()">Kategorien</button>
+    <button class="btn-pill on" id="archbtn" onclick="toggleArch()" style="display:none">Archiv</button>
+    <button class="btn-add" onclick="openEditSheet(null)">+</button>
+  </div>
+</nav>
+
+<div class="tabs">
+  <button class="tab active" data-page="list" data-f="all">Alle</button>
+  <button class="tab wear" data-page="list" data-f="wear">Verschleiß</button>
+  <button class="tab durable" data-page="list" data-f="durable">Langlebig</button>
+  <button class="tab consumable" data-page="list" data-f="consumable">Verbrauch</button>
+  <button class="tab vorschau" data-page="vorschau" data-f="">Vorschau</button>
+</div>
+
+<div class="page active" id="page-list"></div>
+<div class="page" id="page-vorschau"></div>
+
+<!-- EDIT SHEET -->
+<div class="overlay" id="edit-overlay">
+  <div class="sheet">
+    <div class="sheet-title" id="edit-title">Neues Ding</div>
+
+    <div class="two-col">
+      <div class="field"><label>Typ / Kurztitel</label><input id="fkind" type="text" placeholder="z.B. Schuhe"></div>
+      <div class="field"><label>Produkt <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label><input id="fproduct" type="text" placeholder="z.B. Marke oder Modell"></div>
+    </div>
+
+    <div class="field"><label>Kategorie</label><select id="fcat"></select></div>
+    <div class="field">
+      <label>Art</label>
+      <div class="type-row">
+        <div class="tbtn wear" onclick="setType('wear')">Verschleiß</div>
+        <div class="tbtn durable" onclick="setType('durable')">Langlebig</div>
+        <div class="tbtn consumable" onclick="setType('consumable')">Verbrauch</div>
+      </div>
+    </div>
+
+    <!-- WEAR -->
+    <div class="cond" id="cw">
+      <div class="field"><label>Kaufpreis (€) <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label><input id="fw-price" type="number" min="0" step="0.01" placeholder="z.B. 5" oninput="updateWearCalc()"><div class="field-note">Kaufpreis eintragen für €/Tag Anzeige in der Liste.</div></div>
+      <div class="field">
+        <label>Erwartete Nutzungsdauer (Tage) <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label>
+        <input id="fw-duration" type="number" min="1" placeholder="z.B. 90" oninput="updateWearCalc()">
+        <div class="field-note">Wenn eingetragen, erscheint das Item in der Vorschau.</div>
+        <div class="field-calc" id="fw-calc-preview"></div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="fw-mode" onchange="document.getElementById('fw-date-wrap').style.display=this.value==='active'?'block':'none';updateWearCalc()">
+          <option value="active">Direkt aktiv</option>
+          <option value="stock">Im Vorrat</option>
+        </select>
+      </div>
+      <div id="fw-date-wrap" class="field"><label>Aktiviert am</label><input id="fw-date" type="date" oninput="updateWearCalc()"></div>
+    </div>
+
+    <!-- DURABLE -->
+    <div class="cond" id="cd">
+      <div class="field"><label>In Gebrauch seit</label><input id="fd-date" type="date"></div>
+      <div class="field"><label>Kaufpreis (€)</label><input id="fd-price" type="number" min="0" step="0.01" placeholder="120"></div>
+    </div>
+
+    <!-- CONSUMABLE -->
+    <div class="cond" id="cc">
+      <div class="two-col">
+        <div class="field"><label>Menge / Packung</label><input id="fc-qty" type="number" min="1" placeholder="500"></div>
+        <div class="field"><label>Einheit</label><input id="fc-unit" type="text" placeholder="g"></div>
+      </div>
+      <div class="field"><label>Preis / Packung (€) <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label><input id="fc-price" type="number" min="0" step="0.01" placeholder="z.B. 3.50"></div>
+      <div class="field">
+        <label>Verbrauch / Tag <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label>
+        <input id="fc-pd" type="number" min="0.1" step="0.1" placeholder="z.B. 50">
+        <div class="field-note">Leer lassen — wird beim Aussortieren berechnet.</div>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="fc-mode" onchange="document.getElementById('fc-date-wrap').style.display=this.value==='open'?'block':'none'">
+          <option value="open">Bereits geöffnet</option>
+          <option value="stock">Im Vorrat</option>
+        </select>
+      </div>
+      <div id="fc-date-wrap" class="field"><label>Geöffnet am</label><input id="fc-date" type="date"></div>
+    </div>
+
+    <div class="save-row">
+      <button class="sbtn" onclick="closeSheet('edit-overlay')">Abbrechen</button>
+      <button class="sbtn primary" onclick="saveItem()">Speichern</button>
+    </div>
+    <div id="action-area" style="display:none">
+      <hr class="action-divider">
+      <div class="action-section-label">Aktionen</div>
+      <div class="action-btns" id="action-btns"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SORT-OUT SHEET -->
+<div class="overlay" id="sortout-overlay">
+  <div class="sheet">
+    <div class="sheet-title" id="so-title">Aussortieren</div>
+    <div class="sortout-info" id="so-info" style="display:none"></div>
+    <div class="field"><label>Enddatum</label><input type="date" id="so-date" oninput="updateSortOutCalc()"></div>
+    <div class="field-note" id="so-calc" style="display:none;margin-bottom:8px;"></div>
+    <div class="save-row">
+      <button class="sbtn" onclick="closeSheet('sortout-overlay')">Abbrechen</button>
+      <button class="sbtn primary" onclick="confirmSortOut()">Aussortieren</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE SHEET -->
+<div class="overlay" id="confirm-overlay">
+  <div class="sheet" style="padding:24px 16px 36px">
+    <div class="sheet-title" style="margin-bottom:8px">Löschen?</div>
+    <div id="confirm-text" style="font-size:14px;color:var(--text2);margin-bottom:24px"></div>
+    <div class="save-row">
+      <button class="sbtn" onclick="closeSheet('confirm-overlay')">Abbrechen</button>
+      <button class="sbtn" id="confirm-ok-btn" style="background:var(--danger);color:#fff;border-color:var(--danger)">Löschen</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="overlay" id="cat-overlay">
+  <div class="sheet">
+    <div class="sheet-title">Kategorien</div>
+    <div id="cat-mgr-list"></div>
+    <div class="cat-add-row">
+      <input id="new-cat" type="text" placeholder="Neue Kategorie …" onkeydown="if(event.key==='Enter')addCat()">
+      <button onclick="addCat()">+</button>
+    </div>
+    <div class="save-row" style="margin-top:16px;">
+      <button class="sbtn" onclick="closeSheet('cat-overlay')">Abbrechen</button>
+      <button class="sbtn primary" onclick="saveCats()">Fertig</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// migrate old key if needed
+if(!localStorage.getItem('spence-items')&&localStorage.getItem('d10-items')){
+  localStorage.setItem('spence-items',localStorage.getItem('d10-items'));
+  localStorage.setItem('spence-cats',localStorage.getItem('d10-cats'));
+}
+let cats  = JSON.parse(localStorage.getItem('spence-cats')  || 'null') || ['Bad','Haushalt','Kleidung','Küche','Sonstige'];
+let items = JSON.parse(localStorage.getItem('spence-items') || 'null') || makeDemo();
+let editId=null, selType=null, sortOutId=null, filt='all', curPage='list', showArch=false, draftCats=[];
+
+function makeDemo(){
+  const ago=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().split('T')[0];};
+  return [
+    {id:'w1',kind:'Zahnbürste',    product:'',                cat:'Bad',      type:'wear',       price:4,    activeStart:ago(74), duration:90},
+    {id:'w2',kind:'Zahnbürste',    product:'Oral-B Cross',    cat:'Bad',      type:'wear',       price:4,    activeStart:null,    duration:90},
+    {id:'w3',kind:'Rasierklingen', product:'Gillette Fusion', cat:'Bad',      type:'wear',       price:12,   activeStart:ago(9),  duration:14},
+    {id:'d1',kind:'Jacke',         product:"Arc'teryx Beta",  cat:'Kleidung', type:'durable',    price:580,  start:ago(480)},
+    {id:'d2',kind:'Laufschuhe',    product:'Nike Pegasus',    cat:'Kleidung', type:'durable',    price:130,  start:ago(200)},
+    {id:'c1',kind:'Haferflocken',  product:'Alnatura',        cat:'Küche',    type:'consumable', qty:500,unit:'g', packPrice:2.49,perDay:60,  openedAt:ago(6)},
+    {id:'c2',kind:'Haferflocken',  product:'Alnatura',        cat:'Küche',    type:'consumable', qty:500,unit:'g', packPrice:2.49,perDay:60,  openedAt:null},
+    {id:'c3',kind:'Olivenöl',      product:'',                cat:'Küche',    type:'consumable', qty:750,unit:'ml',packPrice:6.90,perDay:15,  openedAt:ago(40)},
+    {id:'c4',kind:'Waschmittel',   product:'Persil',          cat:'Haushalt', type:'consumable', qty:20, unit:'WG', packPrice:8.99,perDay:0.7, openedAt:ago(8)},
+  ];
+}
+
+function persist(){
+  localStorage.setItem('spence-items',JSON.stringify(items));
+  localStorage.setItem('spence-cats', JSON.stringify(cats));
+}
+function today(){return new Date().toISOString().split('T')[0];}
+function daysBetween(a,b){return Math.max(0,Math.floor((new Date(b)-new Date(a))/86400000));}
+function daysSince(s){if(!s)return 0;return daysBetween(s,today());}
+function fmt(n){
+  if(n<=0)return 'heute';if(n===1)return '1 Tag';
+  if(n<30)return n+' T';if(n<365)return Math.round(n/30)+' Mo';
+  return (n/365).toFixed(1)+' J';
+}
+function isStock(it){
+  if(it.type==='wear') return !it.activeStart;
+  if(it.type==='consumable') return !it.openedAt;
+  return false;
+}
+function dname(it){return it.kind||it.name||'?';}
+
+// ── COST PER DAY ──────────────────────────────────────────────────────────────
+function cpdWear(it){
+  if(!it.price||!it.activeStart) return null;
+  const d=daysSince(it.activeStart)||1;
+  return (it.price/d).toFixed(2);
+}
+function cpdDurable(it){
+  if(it.frozenCpd) return it.frozenCpd;
+  if(!it.price||!it.start) return null;
+  const d=daysSince(it.start)||1;
+  return (it.price/d).toFixed(2);
+}
+function cpdConsumable(it){
+  // cost/day = packPrice / (qty / perDay)  i.e. packPrice * perDay / qty
+  if(!it.packPrice||!it.perDay||!it.qty) return null;
+  return (it.packPrice*it.perDay/it.qty).toFixed(2);
+}
+
+// ── STATUS ────────────────────────────────────────────────────────────────────
+function getStatus(it){
+  if(it.archived){
+    if(it.frozenCpd)
+      return {dot:'off',urgency:-1,chips:[{t:it.frozenCpd+' €/T',c:'frozen'}]};
+    return {dot:'off',urgency:-1,chips:[{t:'aussortiert',c:'muted'}]};
+  }
+  if(it.type==='wear'){
+    if(!it.activeStart) return {dot:'idle',urgency:-1,chips:[{t:'Vorrat',c:'idle'}]};
+    const chips=[{t:fmt(daysSince(it.activeStart))+' aktiv',c:'muted'}];
+    const cpd=cpdWear(it);
+    if(cpd) chips.push({t:cpd+' €/T',c:'hi'});
+    return {dot:'ok',urgency:0,chips};
+  }
+  if(it.type==='durable'){
+    const d=daysSince(it.start)||1;
+    const cpd=cpdDurable(it);
+    const chips=[{t:fmt(d),c:'muted'}];
+    if(cpd) chips.push({t:cpd+' €/T',c:'hi'});
+    return {dot:'ok',urgency:0,chips};
+  }
+  // consumable
+  if(!it.openedAt) return {dot:'idle',urgency:-1,chips:[{t:'Vorrat',c:'idle'}]};
+  const chips=[{t:fmt(daysSince(it.openedAt)),c:'muted'}];
+  const cpd=cpdConsumable(it);
+  if(cpd) chips.push({t:cpd+' €/T',c:'hi'});
+  return {dot:'ok',urgency:0,chips};
+}
+
+// ── VORSCHAU ──────────────────────────────────────────────────────────────────
+function getVorschau(){
+  const out=[];
+  items.filter(i=>!i.archived).forEach(it=>{
+    // consumable with perDay
+    if(it.type==='consumable'&&it.openedAt&&it.perDay&&it.qty){
+      const rem=Math.max(0,it.qty-it.perDay*daysSince(it.openedAt));
+      const pct=it.qty?rem/it.qty:0;
+      const dl=Math.floor(rem/it.perDay);
+      const cpd=cpdConsumable(it);
+      out.push({it,daysLeft:dl,pct,cpd,label:'bis leer'});
+    }
+    // wear with duration
+    if(it.type==='wear'&&it.activeStart&&it.duration){
+      const elapsed=daysSince(it.activeStart);
+      const rem=Math.max(0,it.duration-elapsed);
+      const pct=Math.max(0,Math.min(1,rem/it.duration));
+      out.push({it,daysLeft:rem,pct,cpd:cpdWear(it),label:'bis Wechsel'});
+    }
+  });
+  return out.sort((a,b)=>a.daysLeft-b.daysLeft);
+}
+
+function updateWearCalc(){
+  const price=parseFloat(document.getElementById('fw-price').value);
+  const dur=parseInt(document.getElementById('fw-duration').value);
+  const el=document.getElementById('fw-calc-preview');
+  if(price&&dur){
+    el.textContent=`→ ${(price/dur).toFixed(2)} €/Tag über ${dur} Tage`;
+  } else if(dur){
+    el.textContent=`→ Wechsel nach ${dur} Tagen`;
+  } else {
+    el.textContent='';
+  }
+}
+
+// ── RENDER LIST ───────────────────────────────────────────────────────────────
+function rowHtml(it){
+  const s=getStatus(it);
+  const chips=s.chips.map(c=>`<span class="chip ${c.c}">${c.t}</span>`).join('');
+  const product=it.product?`<span class="iproduct">${it.product}</span>`:'';
+  return `<div class="item-row${isStock(it)&&!it.archived?' stock-row':''}${it.archived?' archived-row':''}" onclick="openEditSheet('${it.id}')">
+    <div class="sdot ${s.dot}"></div>
+    <div class="inames"><span class="ikind">${dname(it)}</span>${product}</div>
+    <div class="iinfo">${chips}</div>
+    <span class="chevron">›</span>
+  </div>`;
+}
+
+function renderList(){
+  const el=document.getElementById('page-list');
+  const vis=items.filter(i=>{
+    if(showArch) return i.archived;
+    if(i.archived) return false;
+    return filt==='all'||i.type===filt;
+  });
+  if(!vis.length){el.innerHTML='<div class="empty">Keine Einträge.</div>';return;}
+
+  const active=vis.filter(i=>!isStock(i));
+  const stock =vis.filter(i=> isStock(i));
+
+  function byCat(arr){const g={};arr.forEach(i=>{const c=i.cat||'Sonstige';(g[c]||(g[c]=[])).push(i);});return g;}
+  function catKeys(g){
+    return Object.keys(g).sort((a,b)=>{
+      const ia=cats.indexOf(a),ib=cats.indexOf(b);
+      if(ia===-1&&ib===-1)return a.localeCompare(b);
+      if(ia===-1)return 1;if(ib===-1)return -1;return ia-ib;
+    });
+  }
+  function byUrg(arr){return arr.sort((a,b)=>getStatus(b).urgency-getStatus(a).urgency);}
+
+  function secHtml(label,arr){
+    if(!arr.length)return '';
+    const g=byCat(arr),keys=catKeys(g);
+    let h=`<div class="section-header"><span class="section-label">${label}</span><div class="section-line"></div></div>`;
+    const showCats=filt==='all';
+    keys.forEach(cat=>{
+      if(showCats) h+=`<div class="cat-header"><span class="cat-name">${cat}</span><span class="cat-count">${g[cat].length}</span></div>`;
+      byUrg(g[cat]).forEach(it=>{h+=rowHtml(it);});
+    });
+    return h;
+  }
+
+  if(showArch){
+    const g=byCat(vis),keys=catKeys(g);
+    let h=`<div class="section-header"><span class="section-label">Archiv</span><div class="section-line"></div></div>`;
+    keys.forEach(cat=>{
+      h+=`<div class="cat-header"><span class="cat-name">${cat}</span><span class="cat-count">${g[cat].length}</span></div>`;
+      g[cat].forEach(it=>{h+=rowHtml(it);});
+    });
+    el.innerHTML=h;return;
+  }
+  el.innerHTML=secHtml('Aktiv',active)+secHtml('Vorrat',stock);
+}
+
+function renderVorschau(){
+  const el=document.getElementById('page-vorschau');
+  const data=getVorschau();
+  if(!data.length){el.innerHTML='<div class="empty">Keine Verbrauchsartikel mit bekanntem Verbrauch.</div>';return;}
+
+  const bald=data.filter(x=>x.daysLeft<=14);
+  const dem=data.filter(x=>x.daysLeft>14&&x.daysLeft<=60);
+  const sp=data.filter(x=>x.daysLeft>60);
+
+  function vrRow(x){
+    const it=x.it;
+    const cls=x.daysLeft<=7?'danger':x.daysLeft<=14?'warn':'ok';
+    const product=it.product?`<div class="vr-product">${it.product}</div>`:'';
+    const daysText=x.daysLeft===0?'heute':x.daysLeft===1?'1 Tag':`${x.daysLeft} Tage`;
+    const cpdHtml=x.cpd?`<div style="font-size:11px;color:var(--durable);margin-top:2px">${x.cpd} €/T</div>`:'';
+    return `<div class="vorschau-row" onclick="openEditSheet('${it.id}')">
+      <div class="vr-names"><div class="vr-kind">${dname(it)}</div>${product}</div>
+      <div class="vr-right">
+        <div class="vr-days ${cls}">${daysText}</div>
+        <div class="vr-label">${x.label||'bis leer'}</div>
+        ${cpdHtml}
+        <div class="vr-bar-wrap"><div class="vr-bar ${cls}" style="width:${Math.round(x.pct*100)}%"></div></div>
+      </div>
+    </div>`;
+  }
+
+  function grpHtml(label,arr){
+    if(!arr.length)return '';
+    return `<div class="section-header"><span class="section-label">${label}</span><div class="section-line"></div></div>${arr.map(vrRow).join('')}`;
+  }
+
+  el.innerHTML=grpHtml('Bald leer',bald)+grpHtml('Demnächst',dem)+grpHtml('Später',sp);
+}
+
+function render(){renderList();renderVorschau();}
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    curPage=t.dataset.page;
+    filt=t.dataset.f||'all';
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.getElementById('page-'+curPage).classList.add('active');
+    document.getElementById('archbtn').style.display=(curPage==='vorschau'||!items.some(i=>i.archived))?'none':'';
+    render();
+  });
+});
+
+function toggleArch(){showArch=!showArch;document.getElementById('archbtn').classList.toggle('on',showArch);render();}
+function refreshArchBtn(){
+  document.getElementById('archbtn').style.display=(items.some(i=>i.archived)&&curPage!=='vorschau')?'':'none';
+}
+
+// ── EDIT SHEET ────────────────────────────────────────────────────────────────
+function populateCatSelect(sel){
+  document.getElementById('fcat').innerHTML=cats.map(c=>`<option value="${c}"${c===sel?' selected':''}>${c}</option>`).join('');
+}
+
+function openEditSheet(id){
+  editId=id;
+  document.getElementById('edit-title').textContent=id?'Bearbeiten':'Neues Ding';
+  ['fkind','fproduct','fw-price','fw-duration','fw-date','fd-date','fd-price','fc-qty','fc-unit','fc-price','fc-pd','fc-date'].forEach(x=>{
+    const el=document.getElementById(x);if(el)el.value='';
+  });
+  document.getElementById('fw-date').value=today();
+  document.getElementById('fd-date').value=today();
+  document.getElementById('fc-date').value=today();
+  document.getElementById('fw-mode').value='active';
+  document.getElementById('fc-mode').value='open';
+  document.getElementById('fw-date-wrap').style.display='block';
+  document.getElementById('fc-date-wrap').style.display='block';
+  document.getElementById('fw-calc-preview').textContent='';
+  setType(null);
+
+  if(id){
+    const it=items.find(x=>x.id===id);
+    document.getElementById('fkind').value=it.kind||it.name||'';
+    document.getElementById('fproduct').value=it.product||'';
+    populateCatSelect(it.cat);
+    setType(it.type);
+    if(it.type==='wear'){
+      document.getElementById('fw-price').value=it.price||'';
+      document.getElementById('fw-duration').value=it.duration||'';
+      document.getElementById('fw-mode').value=it.activeStart?'active':'stock';
+      document.getElementById('fw-date').value=it.activeStart||today();
+      document.getElementById('fw-date-wrap').style.display=it.activeStart?'block':'none';
+      updateWearCalc();
+    }
+    if(it.type==='durable'){
+      document.getElementById('fd-date').value=it.start||today();
+      document.getElementById('fd-price').value=it.price||'';
+    }
+    if(it.type==='consumable'){
+      document.getElementById('fc-qty').value=it.qty||'';
+      document.getElementById('fc-unit').value=it.unit||'';
+      document.getElementById('fc-price').value=it.packPrice||'';
+      document.getElementById('fc-pd').value=it.perDay||'';
+      document.getElementById('fc-mode').value=it.openedAt?'open':'stock';
+      document.getElementById('fc-date').value=it.openedAt||today();
+      document.getElementById('fc-date-wrap').style.display=it.openedAt?'block':'none';
+    }
+    buildActions(it);
+    document.getElementById('action-area').style.display='block';
+  } else {
+    populateCatSelect(cats[0]||'Sonstige');
+    document.getElementById('action-area').style.display='none';
+  }
+  openSheet('edit-overlay');
+}
+
+function buildActions(it){
+  const btns=[];
+  if(!it.archived){
+    if(isStock(it)) btns.push({ico:'▶',label:'Aktivieren',cls:'primary-action',action:'activate'});
+    else btns.push({ico:'✕',label:'Aussortieren',cls:'',action:'sortout'});
+    btns.push({ico:'⊕',label:'Duplizieren',cls:'',action:'duplicate'});
+  } else {
+    btns.push({ico:'↩',label:'Reaktivieren',cls:'primary-action',action:'unarchive'});
+  }
+  btns.push({ico:'🗑',label:'Löschen',cls:'',action:'delete'});
+  document.getElementById('action-btns').innerHTML=btns.map(b=>`
+    <button class="abtn ${b.cls}" data-action="${b.action}" data-id="${it.id}">
+      <span class="aico">${b.ico}</span>${b.label}
+    </button>`).join('');
+  // attach listeners
+  document.querySelectorAll('#action-btns .abtn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const id=btn.dataset.id;
+      const action=btn.dataset.action;
+      if(action==='activate') doActivate(id);
+      else if(action==='sortout') openSortOut(id);
+      else if(action==='duplicate') doDuplicate(id);
+      else if(action==='unarchive') doUnarchive(id);
+      else if(action==='delete') doDelete(id);
+    });
+  });
+}
+
+function setType(t){
+  selType=t;
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.toggle('on',b.classList.contains(t)));
+  ['wear','durable','consumable'].forEach(x=>document.getElementById('c'+x[0]).classList.toggle('show',x===t));
+}
+
+function saveItem(){
+  const kind=document.getElementById('fkind').value.trim();
+  const product=document.getElementById('fproduct').value.trim();
+  const cat=document.getElementById('fcat').value;
+  if(!kind||!selType){alert('Typ und Art erforderlich.');return;}
+  const old=editId?items.find(x=>x.id===editId):null;
+  const it={id:editId||Date.now().toString(),kind,product,cat,type:selType};
+
+  if(selType==='wear'){
+    const pv=document.getElementById('fw-price').value;
+    it.price=pv?parseFloat(pv):null;
+    const dv=document.getElementById('fw-duration').value;
+    it.duration=dv?parseInt(dv):null;
+    const m=document.getElementById('fw-mode').value;
+    it.activeStart=m==='active'?(document.getElementById('fw-date').value||today()):null;
+    if(old?.archived)it.archived=true;
+  }
+  if(selType==='durable'){
+    it.start=document.getElementById('fd-date').value||today();
+    it.price=parseFloat(document.getElementById('fd-price').value)||0;
+    if(old?.archived){it.archived=true;it.frozenCpd=old.frozenCpd;}
+  }
+  if(selType==='consumable'){
+    it.qty=parseFloat(document.getElementById('fc-qty').value)||0;
+    it.unit=document.getElementById('fc-unit').value.trim();
+    const ppv=document.getElementById('fc-price').value;
+    it.packPrice=ppv?parseFloat(ppv):null;
+    const pdv=document.getElementById('fc-pd').value;
+    it.perDay=pdv?parseFloat(pdv):null;
+    const m=document.getElementById('fc-mode').value;
+    it.openedAt=m==='open'?(document.getElementById('fc-date').value||today()):null;
+  }
+
+  if(editId) items=items.map(i=>i.id===editId?it:i);
+  else items.push(it);
+  persist(); closeSheet('edit-overlay'); render(); refreshArchBtn();
+}
+
+function doActivate(id){
+  const it=items.find(x=>x.id===id);
+  if(it.type==='wear') it.activeStart=today();
+  if(it.type==='consumable') it.openedAt=today();
+  persist(); closeSheet('edit-overlay'); render();
+}
+function doUnarchive(id){
+  const it=items.find(x=>x.id===id);
+  it.archived=false;
+  if(it.type==='durable') delete it.frozenCpd;
+  persist(); closeSheet('edit-overlay'); render(); refreshArchBtn();
+}
+function doDuplicate(id){
+  const src=items.find(x=>x.id===id);
+  const copy=JSON.parse(JSON.stringify(src));
+  copy.id=Date.now().toString();
+  copy.archived=false; delete copy.frozenCpd;
+  if(copy.type==='wear') copy.activeStart=null;
+  if(copy.type==='consumable') copy.openedAt=null;
+  items.push(copy); persist();
+  openEditSheet(copy.id);
+}
+function doDelete(id){
+  const it=items.find(x=>x.id===id);
+  document.getElementById('confirm-text').textContent=`„${dname(it)}" wird endgültig gelöscht.`;
+  const btn=document.getElementById('confirm-ok-btn');
+  // remove old listener
+  const newBtn=btn.cloneNode(true);
+  btn.parentNode.replaceChild(newBtn,btn);
+  newBtn.addEventListener('click',()=>{
+    items=items.filter(i=>i.id!==id);
+    persist(); render(); refreshArchBtn();
+    closeSheet('confirm-overlay');
+    closeSheet('edit-overlay');
+  });
+  closeSheet('edit-overlay');
+  openSheet('confirm-overlay');
+}
+
+// ── SORT-OUT ──────────────────────────────────────────────────────────────────
+function openSortOut(id){
+  sortOutId=id;
+  const it=items.find(x=>x.id===id);
+  document.getElementById('so-title').textContent=dname(it)+' aussortieren';
+  document.getElementById('so-date').value=today();
+  document.getElementById('so-calc').style.display='none';
+  let txt='';
+  if(it.type==='wear'&&it.activeStart){
+    const d=daysSince(it.activeStart)||1;
+    txt=`Aktiv seit <strong>${fmt(d)}</strong> (ab ${it.activeStart}).`;
+    if(it.price) txt+=` Kosten/Tag wird eingefroren: <strong>${(it.price/d).toFixed(2)} €</strong>.`;
+  }
+  if(it.type==='durable'&&it.start){
+    const d=daysSince(it.start)||1;
+    const cpd=it.price?(it.price/d).toFixed(2):null;
+    txt=`In Besitz seit <strong>${fmt(d)}</strong>.${cpd?` Kosten/Tag wird eingefroren: <strong>${cpd} €</strong>.`:''}`;
+  }
+  if(it.type==='consumable'&&it.openedAt){
+    txt=`Geöffnet seit <strong>${fmt(daysSince(it.openedAt))}</strong>.`;
+    if(!it.perDay&&it.qty) txt+=' Verbrauch/Tag wird anhand Enddatum berechnet.';
+  }
+  const info=document.getElementById('so-info');
+  info.innerHTML=txt; info.style.display=txt?'block':'none';
+  closeSheet('edit-overlay');
+  openSheet('sortout-overlay');
+}
+function updateSortOutCalc(){
+  if(!sortOutId)return;
+  const it=items.find(x=>x.id===sortOutId);
+  const endDate=document.getElementById('so-date').value||today();
+  const calc=document.getElementById('so-calc');
+  if(it.type==='consumable'&&it.openedAt&&!it.perDay&&it.qty){
+    const d=daysBetween(it.openedAt,endDate);
+    if(d>0){calc.textContent=`→ Verbrauch: ${(it.qty/d).toFixed(1)} ${it.unit||''}/Tag`;calc.style.display='block';}
+  }
+}
+function confirmSortOut(){
+  const it=items.find(x=>x.id===sortOutId);
+  const endDate=document.getElementById('so-date').value||today();
+  // freeze cpd for durable
+  if(it.type==='durable'&&it.price&&it.start){
+    const d=daysBetween(it.start,endDate)||1;
+    it.frozenCpd=(it.price/d).toFixed(2);
+  }
+  // freeze cpd for wear (use actual days active)
+  if(it.type==='wear'&&it.price&&it.activeStart){
+    const d=daysBetween(it.activeStart,endDate)||1;
+    it.frozenCpd=(it.price/d).toFixed(2);
+    // also store actual duration for stats
+    it.actualDuration=d;
+  }
+  // calculate perDay for consumable if missing
+  if(it.type==='consumable'&&it.openedAt&&!it.perDay&&it.qty){
+    const d=daysBetween(it.openedAt,endDate);
+    if(d>0) it.perDay=parseFloat((it.qty/d).toFixed(2));
+  }
+  it.archived=true; it.endDate=endDate;
+  persist(); closeSheet('sortout-overlay'); render(); refreshArchBtn();
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+function openSheet(id){document.getElementById(id).classList.add('open');}
+function closeSheet(id){document.getElementById(id).classList.remove('open');}
+['edit-overlay','sortout-overlay','cat-overlay','confirm-overlay'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',e=>{
+    if(e.target===document.getElementById(id))closeSheet(id);
+  });
+});
+
+function openCatManager(){draftCats=[...cats];renderCatMgr();openSheet('cat-overlay');}
+function renderCatMgr(){
+  document.getElementById('cat-mgr-list').innerHTML=draftCats.map((c,i)=>`
+    <div class="cat-mgr-item">
+      <input type="text" value="${c}" onchange="draftCats[${i}]=this.value">
+      <button class="cat-del-btn" onclick="draftCats.splice(${i},1);renderCatMgr()">×</button>
+    </div>`).join('');
+  document.getElementById('new-cat').value='';
+}
+function addCat(){
+  const v=document.getElementById('new-cat').value.trim();
+  if(!v)return;
+  if(draftCats.includes(v)){alert('Existiert bereits.');return;}
+  draftCats.push(v);renderCatMgr();
+}
+function saveCats(){
+  document.querySelectorAll('#cat-mgr-list .cat-mgr-item input').forEach((el,i)=>{draftCats[i]=el.value.trim();});
+  cats=draftCats.filter(Boolean);
+  persist();populateCatSelect(cats[0]||'');closeSheet('cat-overlay');render();
+}
+
+refreshArchBtn();
+render();
+</script>
+</body>
+</html>
