@@ -1,0 +1,14 @@
+# --- Lizenzierte Schrift: NICHT ins öffentliche Repo ---
+# Die Font-Dateien sind domain-lizenziert und dürfen nicht öffentlich
+# im Repo liegen. Sie existieren lokal im Ordner /fonts und werden
+# ausschließlich über Netlify (Drop/CLI) auf die lizenzierte Domain
+# ausgeliefert. Hier bewusst ausgeschlossen — der Ordner selbst wird
+# über fonts/README.md dokumentiert.
+/fonts/*.woff2
+/fonts/*.woff
+/fonts/*.otf
+/fonts/*.ttf
+/fonts/*.eot
+
+# macOS
+.DS_Store
