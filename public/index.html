@@ -10,174 +10,250 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Spence">
-<meta name="theme-color" content="#1c1c1a">
-<link href="https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600&family=Lora:ital@1&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#202225" media="(prefers-color-scheme: dark)">
 <style>
-:root {
-  --bg: #f8f8f6;
-  --surface: #fff;
-  --border: #e4e4e0;
-  --border2: #d0d0ca;
-  --text: #1c1c1a;
-  --text2: #6b6b66;
-  --text3: #a8a8a2;
-  --wear: #b85c2a;
-  --durable: #2a6b48;
-  --consumable: #2a4a8a;
-  --warn: #c87820;
-  --danger: #b83030;
-  --ok: #3a8a58;
+/* Spence – im Kleid von klog (weekly_hub) und den Werkzeugen (Braille, Weltformel):
+   Hausschrift nur im Light-Schnitt, Oberfläche in reinem Grau, Struktur über feine Linien.
+   Farbe trägt allein das Etikett (die Art eines Dings); Dringlichkeit zeigt Form und Stärke. */
+@font-face{
+  font-family:"Antique Legacy";
+  src:url("fonts/Antique-Legacy-Light.woff2") format("woff2");
+  font-weight:300 500;font-style:normal;font-display:swap;
+}
+@font-face{
+  font-family:"Antique Legacy";
+  src:url("fonts/Antique-Legacy-Bold.woff2") format("woff2");
+  font-weight:600 700;font-style:normal;font-display:swap;
+}
+:root{
+  /* Etikett-Palette aus klog – die einzigen bunten Töne. */
+  --pal-gray:#bdbdbd; --pal-red:#fa5026; --pal-blue:#87bbef; --pal-yellow:#f8db70; --pal-pink:#ffcae2; --pal-green:#387d5f; --pal-khaki:#cdcba8;
+
+  /* Oberfläche: reines Grau, kein Beige. */
+  --bg:#f4f4f4;   /* Seitengrund und aktiver Reiter – eine Stufe unter klogs #fafafa */
+  --surface:#ffffff;
+  --surface-2:#f4f4f4;
+  --border:#ececec;
+  --border2:#d6d6d6;
+  --text:#2a2a2a;
+  --text2:#6c6c6c;
+  --text3:#a0a0a0;
+  --accent:#3d3d3d;
+  --accent-soft:#e8e8e8;
+  --hover:#f0f0f0;
+  --pill:#e4e4e4;
+
+  /* Die Art eines Dings = Farbetikett. */
+  --wear:var(--pal-red);
+  --durable:var(--pal-green);
+  --consumable:var(--pal-blue);
+
+  --font:"Antique Legacy", -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Helvetica, Arial, sans-serif;
+  --radius:9.6px;
+  --radius-sm:6px;
+  --track:-.03em;
+  --head-h:86.4px;   /* Kopfzeile + Reiter – wird per Script nachgemessen */
+  --col:720px;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#17181a;
+    --surface:#202225;
+    --surface-2:#282a2e;
+    --border:#33353a;
+    --border2:#45484e;
+    --text:#ebebeb;
+    --text2:#a0a0a0;
+    --text3:#6f6f6f;
+    --accent:#7a7a7a;
+    --accent-soft:#2c2e31;
+    --hover:#2e3035;
+    --pill:#3a3d43;
+  }
 }
 *{box-sizing:border-box;margin:0;padding:0;}
+[hidden]{display:none !important;}
 html,body{max-width:100%;overflow-x:hidden;}
-body{background:var(--bg);color:var(--text);font-family:'Karla',sans-serif;font-size:14px;min-height:100vh;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-weight:400;font-size:14.4px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;font-variant-numeric:lining-nums proportional-nums;}
+input,select,option,textarea,button{font-family:var(--font);}
+strong,b{font-weight:400;color:var(--text);}
+.ico,.icon{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;}
 
-nav{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 12px;border-bottom:1px solid var(--border);background:var(--surface);position:sticky;top:0;z-index:50;}
-nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400;}
-.nav-right{display:flex;gap:6px;align-items:center;}
-.sync-dot{width:7px;height:7px;border-radius:50%;background:transparent;transition:background 0.3s;flex-shrink:0;}
-.sync-dot.syncing{background:var(--warn);animation:pulse 1s infinite;}
-.sync-dot.ok{background:var(--ok);}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.25;}}
-.btn-pill{background:none;border:1px solid var(--border2);color:var(--text2);font-family:'Karla',sans-serif;font-size:11px;padding:4px 9px;border-radius:20px;cursor:pointer;white-space:nowrap;}
-.btn-pill.on{background:var(--text);color:var(--bg);border-color:var(--text);}
-.btn-add{background:var(--text);color:var(--bg);border:none;width:30px;height:30px;border-radius:50%;font-size:18px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;padding-bottom:1px;}
+/* ---------- Kopfzeile ---------- */
+.site-header{position:sticky;top:0;z-index:50;background:color-mix(in srgb,var(--surface) 85%,transparent);backdrop-filter:saturate(180%) blur(12px);-webkit-backdrop-filter:saturate(180%) blur(12px);}
+/* Haarlinie unten, durchgehend – sie liegt auch über dem aktiven Reiter. */
+.site-header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--border2);transform:scaleY(.5);transform-origin:bottom;pointer-events:none;}
+.site-header .inner{max-width:var(--col);margin:0 auto;padding:0 16px;}
+nav.inner{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:57.6px;}
+/* Einzige Bold-Auszeichnung: der Name links oben, Laufweite −3 %. */
+.brand{font-size:24px;font-weight:700;letter-spacing:var(--track);color:var(--text);}
+.nav-right{display:flex;gap:4px;align-items:center;}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:transparent;transition:background .3s;flex-shrink:0;margin-right:4px;}
+.sync-dot.syncing{background:var(--text3);animation:pulse 1s infinite;}
+.sync-dot.ok{background:var(--text2);}
+.sync-dot.err{background:transparent;border:1px solid var(--text2);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.btn-pill{background:transparent;border:1px solid transparent;color:var(--text2);font-size:14.4px;padding:4.8px 9.6px;border-radius:var(--radius-sm);cursor:pointer;white-space:nowrap;}
+.btn-pill:hover{background:var(--hover);color:var(--text);}
+.btn-pill.on{background:var(--surface-2);color:var(--text);}
+.btn-add{display:flex;align-items:center;justify-content:center;width:36px;height:36px;margin-left:4px;border-radius:50%;border:none;background:var(--surface-2);color:var(--text);cursor:pointer;flex-shrink:0;}
+.btn-add:hover{background:var(--border);}
+.btn-add .icon{width:16px;height:16px;}
 
-.tabs{display:flex;padding:0 16px;border-bottom:1px solid var(--border);background:var(--surface);overflow-x:auto;}
-.tab{padding:10px 13px 9px;font-size:12px;font-weight:600;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;background:none;border-top:none;border-left:none;border-right:none;font-family:'Karla',sans-serif;}
-.tab.active{color:var(--text);border-bottom-color:var(--text);}
-.tab.wear.active{color:var(--wear);border-bottom-color:var(--wear);}
-.tab.durable.active{color:var(--durable);border-bottom-color:var(--durable);}
-.tab.consumable.active{color:var(--consumable);border-bottom-color:var(--consumable);}
-.tab.vorschau.active{color:var(--warn);border-bottom-color:var(--warn);}
+/* Reiter wie bei einem Karteiordner: der aktive ist grau wie der Seitengrund und geht unten nahtlos in ihn über. */
+.tabs{display:flex;align-items:flex-end;gap:4px;padding-top:4px;overflow-x:auto;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{display:inline-flex;align-items:center;gap:6px;padding:7.2px 12px;font-size:14.4px;color:var(--text2);border-radius:var(--radius-sm) var(--radius-sm) 0 0;border:none;background:none;cursor:pointer;white-space:nowrap;}
+.tab:hover{background:var(--hover);color:var(--text);}
+.tab.active,.tab.active:hover{background:var(--bg);color:var(--text);}
+.lbl{width:8px;height:8px;border-radius:50%;background:var(--label-color,var(--border2));flex-shrink:0;}
+.wear{--label-color:var(--wear);}
+.durable{--label-color:var(--durable);}
+.consumable{--label-color:var(--consumable);}
 
-.page{display:none;padding-bottom:80px;}
+/* ---------- Seiten & Gruppen ---------- */
+.page{display:none;max-width:var(--col);margin:0 auto;padding:16px 0 80px;}
 .page.active{display:block;}
+.group{background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.group + .group{margin-top:16px;}
+@media (min-width:640px){
+  .page{padding:16px 16px 80px;}
+  .group{border:1px solid var(--border);border-radius:var(--radius);overflow:clip;}
+  .group + .group{margin-top:16px;}
+}
+.section-header{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 8px 12px 16px;position:sticky;top:var(--head-h);background:var(--surface);border-bottom:1px solid var(--border);z-index:10;}
+.section-label{font-size:16px;letter-spacing:-.015em;color:var(--text);}
+.count-pill{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:12px;background:var(--pill);color:var(--text2);font-size:10.8px;}
 
-.section-header{display:flex;align-items:center;gap:8px;padding:12px 16px 5px;position:sticky;top:86px;background:var(--bg);z-index:10;}
-.section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;color:var(--text3);}
-.section-line{flex:1;height:1px;background:var(--border);}
+/* Kategorie-Trenner wie die Tages-Trenner im Logbuch: nur eine feine Linie. */
+.cat-header{display:flex;align-items:baseline;justify-content:space-between;padding:6px 8px 3.2px 16px;border-bottom:1px solid var(--border);}
+.cat-name,.cat-count{font-size:10.8px;color:var(--text3);}
+.cat-count{min-width:20px;text-align:center;}
 
-.cat-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px 4px;}
-.cat-name{font-size:11px;color:var(--text3);}
-.cat-count{font-size:10px;color:var(--text3);}
+/* ---------- Zeilen ---------- */
+.item-row,.vorschau-row{position:relative;display:flex;align-items:center;gap:9.6px;min-height:48px;padding:9.6px 8px 9.6px 16px;border-bottom:1px solid var(--border);background:var(--surface);cursor:pointer;user-select:none;}
+/* Rechte Achse: Zähl-Pille, Kategorie-Zahl, Chevron und Dringlichkeit stehen mittig in einer 20 px breiten Spalte, 8 px vom Rand. */
+.group > .item-row:last-child,.group > .vorschau-row:last-child{border-bottom:none;}
+.item-row:hover,.vorschau-row:hover{background:var(--hover);}
+.item-row.archived-row{opacity:.45;}
 
-/* ROW */
-.item-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);gap:10px;cursor:pointer;transition:background 0.12s;user-select:none;}
-.item-row:active{background:#f0f0ec;}
-.item-row.stock-row{background:var(--bg);}
-.item-row.stock-row:active{background:#eeeee8;}
-.item-row.archived-row{opacity:0.38;}
+/* Farbetikett = der Punkt. Seine Form zeigt den Zustand: gefüllt = in Gebrauch, Ring = im Vorrat, Strich = aussortiert. */
+.sdot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sdot.ok{background:var(--label-color,var(--text2));}
+.sdot.idle{border:1.5px solid var(--label-color,var(--text3));}
+.sdot.off{width:8px;height:1.5px;border-radius:0;background:var(--label-color,var(--text3));}
 
-.sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:4px;}
-.sdot.ok{background:var(--ok);}
-.sdot.warn{background:var(--warn);}
-.sdot.danger{background:var(--danger);}
-.sdot.idle{background:var(--border2);}
-.sdot.off{background:var(--text3);}
-
-.inames{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;} /* increased gap */
-.ikind{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
-.iproduct{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2;}
-.stock-row .ikind{font-weight:400;color:var(--text2);}
+.inames,.vr-names{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.ikind,.vr-kind{font-size:14.4px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25;}
+.iproduct,.vr-product{font-size:12px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25;}
+.isub{display:flex;align-items:center;gap:6px;min-width:0;}
+.isub:empty{display:none;}
+.stock-row .ikind{color:var(--text2);}
 .archived-row .ikind{text-decoration:line-through;color:var(--text3);}
 
-.iinfo{display:flex;gap:8px;align-items:center;flex-shrink:0;}
+.iinfo{display:flex;gap:9.6px;align-items:center;flex-shrink:0;}
 .chip{font-size:12px;color:var(--text2);white-space:nowrap;}
-.chip.warn{color:var(--warn);font-weight:600;}
-.chip.danger{color:var(--danger);font-weight:600;}
-.chip.hi{color:var(--durable);}
+.chip.hi,.chip.frozen{color:var(--text);}
 .chip.muted{color:var(--text3);}
-.chip.idle{color:var(--text3);font-style:italic;}
-.chip.frozen{color:var(--durable);font-style:italic;}
-.chevron{color:var(--text3);font-size:12px;flex-shrink:0;}
+/* Marken umrandet statt gefüllt – eine dünne Kontur genügt. */
+.chip.idle{padding:0 6.4px;border:1px solid currentColor;border-radius:3px;font-size:10.8px;line-height:1.5;color:var(--text3);}
+.chevron{display:flex;justify-content:center;width:20px;color:var(--text3);flex-shrink:0;}
+.chevron .icon{width:12.8px;height:12.8px;}
 
-.empty{padding:32px 16px;text-align:center;color:var(--text3);font-size:13px;}
+.empty{padding:32px 16px;text-align:center;color:var(--text3);font-size:14.4px;}
 
-/* VORSCHAU */
-.vorschau-row{display:flex;align-items:center;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);gap:12px;cursor:pointer;}
-.vr-names{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;}
-.vr-kind{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.vr-product{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* ---------- Vorschau: nach Kalenderwochen ---------- */
+.section-sub{margin-left:6px;font-size:12px;color:var(--text3);}
 .vr-right{flex-shrink:0;text-align:right;}
-.vr-days{font-size:14px;font-weight:600;}
-.vr-days.danger{color:var(--danger);}
-.vr-days.warn{color:var(--warn);}
-.vr-days.ok{color:var(--text2);}
-.vr-label{font-size:10px;color:var(--text3);margin-top:1px;}
-.vr-bar-wrap{width:48px;height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:5px;margin-left:auto;}
-.vr-bar{height:100%;border-radius:2px;}
-.vr-bar.ok{background:var(--consumable);}
-.vr-bar.warn{background:var(--warn);}
-.vr-bar.danger{background:var(--danger);}
-
-/* OVERLAY + SHEET */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.35);z-index:200;align-items:flex-end;justify-content:center;}
+/* Das Dringlichkeits-Zeichen steht auf der rechten Achse – wo in der Liste der Chevron steht. */
+.vr-mark{width:20px;flex-shrink:0;text-align:center;font-size:16px;line-height:1;letter-spacing:-.05em;color:var(--text);}
+.vr-date{font-size:14.4px;color:var(--text);line-height:1.25;}
+.vr-rel{font-size:12px;color:var(--text3);line-height:1.25;}
+/* ---------- Blatt (Dialog) ---------- */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.32);z-index:200;align-items:flex-end;justify-content:center;}
 .overlay.open{display:flex;}
-.sheet{background:var(--surface);width:100%;max-width:480px;border-radius:12px 12px 0 0;padding:24px 16px 36px;max-height:90vh;overflow-y:auto;overflow-x:hidden;}
-.sheet-title{font-family:'Lora',serif;font-style:italic;font-size:19px;font-weight:400;margin-bottom:18px;}
+.sheet{background:var(--surface);width:100%;max-width:480px;border-radius:var(--radius) var(--radius) 0 0;padding:20px 16px 32px;max-height:90vh;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;}
+.sheet::-webkit-scrollbar{display:none;}
+@media (min-width:640px){
+  .overlay{align-items:center;}
+  .sheet{border-radius:var(--radius);border:1px solid var(--border);padding:20px 20px 24px;}
+}
+.sheet-title{font-size:18px;letter-spacing:-.015em;margin-bottom:16px;}
 
-.field{margin-bottom:13px;}
-.field label{display:block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text3);margin-bottom:5px;}
-.field input,.field select{width:100%;min-width:0;padding:9px 11px;border:1px solid var(--border2);background:var(--bg);font-family:'Karla',sans-serif;font-size:16px;color:var(--text);border-radius:5px;outline:none;}
-.field input:focus,.field select:focus{border-color:var(--text);}
-.field-note{font-size:11px;color:var(--text3);margin-top:4px;line-height:1.4;}
-.field-calc{font-size:12px;color:var(--durable);margin-top:5px;min-height:16px;}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;}
+.field label .opt{color:var(--text3);}
+.field input,.field select{width:100%;min-width:0;padding:8px 9.6px;border:1px solid var(--border2);background:var(--surface);font-size:16px;color:var(--text);border-radius:var(--radius-sm);outline:none;}
+.field input::placeholder{color:var(--text3);}
+.field input:focus,.field select:focus{border-color:var(--text3);}
+.field select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--text3) 50%),linear-gradient(135deg,var(--text3) 50%,transparent 50%);background-position:calc(100% - 14.4px) 52%,calc(100% - 9.6px) 52%;background-size:4.8px 4.8px,4.8px 4.8px;background-repeat:no-repeat;padding-right:28.8px;}
+@media (min-width:640px){.field input,.field select{font-size:14.4px;}}
+.field-note{font-size:12px;color:var(--text3);margin-top:4px;line-height:1.5;}
+.field-calc{font-size:12px;color:var(--text);margin-top:4.8px;min-height:16px;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:9.6px;}
 
-.type-row{display:flex;gap:6px;margin-bottom:14px;}
-.tbtn{flex:1;padding:8px 4px;border:1px solid var(--border2);background:var(--bg);font-family:'Karla',sans-serif;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;color:var(--text2);border-radius:5px;cursor:pointer;text-align:center;transition:all 0.12s;}
-.tbtn.on.wear{background:var(--wear);color:#fff;border-color:var(--wear);}
-.tbtn.on.durable{background:var(--durable);color:#fff;border-color:var(--durable);}
-.tbtn.on.consumable{background:var(--consumable);color:#fff;border-color:var(--consumable);}
+/* Art wählen: wie die Typ-Schalter in klog, mit Farbetikett. */
+.type-row{display:flex;gap:6px;flex-wrap:wrap;}
+.tbtn{display:inline-flex;align-items:center;gap:6px;flex:1;justify-content:center;padding:7.2px 8px;border:1px solid var(--border2);background:var(--surface);font-size:14.4px;color:var(--text2);border-radius:var(--radius-sm);cursor:pointer;}
+.tbtn:hover{border-color:var(--text3);}
+.tbtn.on{border-color:var(--border2);background:var(--accent-soft);color:var(--text);}
 
 .cond{display:none;}
 .cond.show{display:block;}
 
+/* Buttons: nicht invertieren – heller Grund, immer dunkle Schrift. */
 .save-row{display:flex;gap:8px;margin-top:20px;}
-.sbtn{flex:1;padding:11px;border-radius:6px;font-family:'Karla',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:transparent;color:var(--text);}
-.sbtn.primary{background:var(--text);color:var(--bg);border-color:var(--text);}
+.sbtn{flex:1;padding:9.6px 12.8px;border-radius:var(--radius-sm);font-size:14.4px;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--text);}
+.sbtn:hover{background:var(--surface-2);border-color:var(--text3);}
+.sbtn.primary{background:var(--surface-2);}
+.sbtn.primary:hover{background:var(--border);}
+.sbtn.danger{background:var(--surface-2);border-color:var(--text2);}
+.sbtn.danger:hover{background:var(--border);border-color:var(--text);}
+.sbtn:active,.btn-add:active{transform:translateY(1px);}
 
-.action-divider{margin:20px 0 14px;border:none;border-top:1px solid var(--border);}
-.action-section-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text3);margin-bottom:10px;}
-.action-btns{display:flex;flex-direction:column;gap:6px;}
-.abtn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border:1px solid var(--border);background:var(--bg);border-radius:6px;font-family:'Karla',sans-serif;font-size:13px;font-weight:500;color:var(--text2);cursor:pointer;text-align:left;}
-.abtn:active{background:var(--border);}
-.abtn.primary-action{color:var(--text);border-color:var(--border2);}
-.abtn.danger-action{color:var(--danger);border-color:var(--danger);}
-.abtn .aico{width:20px;text-align:center;flex-shrink:0;}
+.action-divider{margin:20px 0 12px;border:none;border-top:1px solid var(--border);}
+.action-section-label{font-size:12px;color:var(--text2);margin-bottom:8px;}
+.action-btns{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;}
+.abtn{display:flex;align-items:center;gap:9.6px;width:100%;padding:9.6px 12.8px;border:none;border-bottom:1px solid var(--border);background:var(--surface);font-size:14.4px;color:var(--text2);cursor:pointer;text-align:left;}
+.abtn:last-child{border-bottom:none;}
+.abtn:hover{background:var(--hover);color:var(--text);}
+.abtn.primary-action{color:var(--text);}
+.abtn .aico{display:flex;color:var(--text3);}
 
-.sortout-info{background:var(--bg);border-radius:6px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:var(--text2);line-height:1.6;}
-.sortout-info strong{color:var(--text);}
+.sortout-info{background:var(--surface-2);border-radius:var(--radius-sm);padding:12px 14.4px;margin-bottom:16px;font-size:14.4px;color:var(--text2);line-height:1.5;}
+.confirm-text{font-size:14.4px;color:var(--text2);margin-bottom:20px;}
 
-.cat-mgr-item{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
-.cat-mgr-item input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--border2);background:var(--bg);font-family:'Karla',sans-serif;font-size:14px;color:var(--text);border-radius:4px;outline:none;}
-.cat-del-btn{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:0 4px;line-height:1;flex-shrink:0;}
-.cat-del-btn:hover{color:var(--danger);}
+.cat-mgr-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);}
+.cat-mgr-item input,.cat-add-row input{flex:1;min-width:0;padding:7.2px 9.6px;border:1px solid var(--border2);background:var(--surface);font-size:16px;color:var(--text);border-radius:var(--radius-sm);outline:none;}
+@media (min-width:640px){.cat-mgr-item input,.cat-add-row input{font-size:14.4px;}}
+.cat-del-btn{display:flex;background:none;border:none;color:var(--text3);cursor:pointer;padding:6px;border-radius:var(--radius-sm);flex-shrink:0;}
+.cat-del-btn:hover{background:var(--surface-2);color:var(--text);}
 .cat-add-row{display:flex;gap:8px;margin-top:12px;}
-.cat-add-row input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--border2);background:var(--bg);font-family:'Karla',sans-serif;font-size:13px;color:var(--text);border-radius:5px;outline:none;}
-.cat-add-row button{padding:8px 14px;background:var(--text);color:var(--bg);border:none;border-radius:5px;font-family:'Karla',sans-serif;font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0;}
+.cat-add-row button{display:flex;align-items:center;padding:0 12.8px;background:var(--surface-2);color:var(--text);border:1px solid var(--border2);border-radius:var(--radius-sm);cursor:pointer;flex-shrink:0;}
+.cat-add-row button:hover{background:var(--border);}
 </style>
 </head>
 <body>
 
-<nav>
-  <h1>Spence</h1>
-  <div class="nav-right">
-    <div class="sync-dot" id="sync-dot"></div>
-    <button class="btn-pill" onclick="openCatManager()">Kategorien</button>
-    <button class="btn-pill on" id="archbtn" onclick="toggleArch()" style="display:none">Archiv</button>
-    <button class="btn-add" onclick="openEditSheet(null)">+</button>
+<header class="site-header">
+  <nav class="inner">
+    <span class="brand">spence</span>
+    <div class="nav-right">
+      <div class="sync-dot" id="sync-dot"></div>
+      <button class="btn-pill" onclick="openCatManager()">Kategorien</button>
+      <button class="btn-pill on" id="archbtn" onclick="toggleArch()" style="display:none">Archiv</button>
+      <button class="btn-add" onclick="openEditSheet(null)" aria-label="Neues Ding"><svg class="icon" viewBox="0 0 16 16"><path d="M8 2.5v11M2.5 8h11"/></svg></button>
+    </div>
+  </nav>
+  <div class="tabs inner">
+    <button class="tab active" data-page="list" data-f="all">Alle</button>
+    <button class="tab" data-page="list" data-f="wear"><span class="lbl wear"></span>Verschleiß</button>
+    <button class="tab" data-page="list" data-f="durable"><span class="lbl durable"></span>Langlebig</button>
+    <button class="tab" data-page="list" data-f="consumable"><span class="lbl consumable"></span>Verbrauch</button>
+    <button class="tab" data-page="vorschau" data-f="">Vorschau</button>
   </div>
-</nav>
-
-<div class="tabs">
-  <button class="tab active" data-page="list" data-f="all">Alle</button>
-  <button class="tab wear" data-page="list" data-f="wear">Verschleiß</button>
-  <button class="tab durable" data-page="list" data-f="durable">Langlebig</button>
-  <button class="tab consumable" data-page="list" data-f="consumable">Verbrauch</button>
-  <button class="tab vorschau" data-page="vorschau" data-f="">Vorschau</button>
-</div>
+</header>
 
 <div class="page active" id="page-list"></div>
 <div class="page" id="page-vorschau"></div>
@@ -189,24 +265,24 @@ nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400
 
     <div class="two-col">
       <div class="field"><label>Typ / Kurztitel</label><input id="fkind" type="text" placeholder="z.B. Schuhe"></div>
-      <div class="field"><label>Produkt <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label><input id="fproduct" type="text" placeholder="z.B. Marke oder Modell"></div>
+      <div class="field"><label>Produkt <span class="opt">(opt.)</span></label><input id="fproduct" type="text" placeholder="z.B. Marke oder Modell"></div>
     </div>
 
     <div class="field"><label>Kategorie</label><select id="fcat"></select></div>
     <div class="field">
       <label>Art</label>
       <div class="type-row">
-        <div class="tbtn wear" onclick="setType('wear')">Verschleiß</div>
-        <div class="tbtn durable" onclick="setType('durable')">Langlebig</div>
-        <div class="tbtn consumable" onclick="setType('consumable')">Verbrauch</div>
+        <div class="tbtn wear" onclick="setType('wear')"><span class="lbl"></span>Verschleiß</div>
+        <div class="tbtn durable" onclick="setType('durable')"><span class="lbl"></span>Langlebig</div>
+        <div class="tbtn consumable" onclick="setType('consumable')"><span class="lbl"></span>Verbrauch</div>
       </div>
     </div>
 
     <!-- WEAR -->
     <div class="cond" id="cw">
-      <div class="field"><label>Kaufpreis (€) <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label><input id="fw-price" type="number" min="0" step="0.01" placeholder="z.B. 5" oninput="updateWearCalc()"><div class="field-note">Kaufpreis eintragen für €/Tag Anzeige in der Liste.</div></div>
+      <div class="field"><label>Kaufpreis (€) <span class="opt">(opt.)</span></label><input id="fw-price" type="number" min="0" step="0.01" placeholder="z.B. 5" oninput="updateWearCalc()"><div class="field-note">Kaufpreis eintragen für €/Tag Anzeige in der Liste.</div></div>
       <div class="field">
-        <label>Erwartete Nutzungsdauer (Tage) <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label>
+        <label>Erwartete Nutzungsdauer (Tage) <span class="opt">(opt.)</span></label>
         <input id="fw-duration" type="number" min="1" placeholder="z.B. 90" oninput="updateWearCalc()">
         <div class="field-note">Wenn eingetragen, erscheint das Item in der Vorschau.</div>
         <div class="field-calc" id="fw-calc-preview"></div>
@@ -233,9 +309,9 @@ nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400
         <div class="field"><label>Menge / Packung</label><input id="fc-qty" type="number" min="1" placeholder="500"></div>
         <div class="field"><label>Einheit</label><input id="fc-unit" type="text" placeholder="g"></div>
       </div>
-      <div class="field"><label>Preis / Packung (€) <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label><input id="fc-price" type="number" min="0" step="0.01" placeholder="z.B. 3.50"></div>
+      <div class="field"><label>Preis / Packung (€) <span class="opt">(opt.)</span></label><input id="fc-price" type="number" min="0" step="0.01" placeholder="z.B. 3.50"></div>
       <div class="field">
-        <label>Verbrauch / Tag <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--text3)">(opt.)</span></label>
+        <label>Verbrauch / Tag <span class="opt">(opt.)</span></label>
         <input id="fc-pd" type="number" min="0.1" step="0.1" placeholder="z.B. 50">
         <div class="field-note">Leer lassen — wird beim Aussortieren berechnet.</div>
       </div>
@@ -277,12 +353,12 @@ nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400
 
 <!-- CONFIRM DELETE SHEET -->
 <div class="overlay" id="confirm-overlay">
-  <div class="sheet" style="padding:24px 16px 36px">
+  <div class="sheet">
     <div class="sheet-title" style="margin-bottom:8px">Löschen?</div>
-    <div id="confirm-text" style="font-size:14px;color:var(--text2);margin-bottom:24px"></div>
+    <div id="confirm-text" class="confirm-text"></div>
     <div class="save-row">
       <button class="sbtn" onclick="closeSheet('confirm-overlay')">Abbrechen</button>
-      <button class="sbtn" id="confirm-ok-btn" style="background:var(--danger);color:#fff;border-color:var(--danger)">Löschen</button>
+      <button class="sbtn danger" id="confirm-ok-btn">Löschen</button>
     </div>
   </div>
 </div>
@@ -294,7 +370,7 @@ nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400
     <div id="cat-mgr-list"></div>
     <div class="cat-add-row">
       <input id="new-cat" type="text" placeholder="Neue Kategorie …" onkeydown="if(event.key==='Enter')addCat()">
-      <button onclick="addCat()">+</button>
+      <button onclick="addCat()" aria-label="Hinzufügen"><svg class="icon" viewBox="0 0 16 16"><path d="M8 2.5v11M2.5 8h11"/></svg></button>
     </div>
     <div class="save-row" style="margin-top:16px;">
       <button class="sbtn" onclick="closeSheet('cat-overlay')">Abbrechen</button>
@@ -303,103 +379,104 @@ nav h1{font-family:'Lora',serif;font-style:italic;font-size:20px;font-weight:400
   </div>
 </div>
 
-<script>
-// ── SUPABASE ──────────────────────────────────────────────────────────────────
-const SUPA_URL = 'https://vspjzyqtkbydyddtxyxn.supabase.co';
-const SUPA_KEY = 'sb_publishable_UajbMmLqT8hp5leTmwJzhg_7i02wXII';
-const HEADERS  = {'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'};
+<!-- LOGIN SHEET -->
+<div class="overlay" id="login-overlay">
+  <form class="sheet" onsubmit="event.preventDefault();saveLogin()">
+    <div class="sheet-title">Anmelden</div>
+    <div class="field-note" style="margin-bottom:12px">Spence speichert auf deinem Server. Dieses Gerät merkt sich die Anmeldung.</div>
+    <div class="field"><label for="login-user">Name</label><input id="login-user" type="text" autocomplete="username" autocapitalize="off"></div>
+    <div class="field"><label for="login-pass">Kennwort</label><input id="login-pass" type="password" autocomplete="current-password"></div>
+    <div class="save-row">
+      <button type="button" class="sbtn" onclick="closeSheet('login-overlay')">Später</button>
+      <button type="submit" class="sbtn primary">Anmelden</button>
+    </div>
+  </form>
+</div>
 
-function setSyncing(on){
+<script>
+// ── SPEICHER: eigene Schnittstelle api/ (ersetzt Supabase) ──────────────────
+// Zwei Dokumente, je als Ganzes: items und cats. Der Ordner api/ ist auf dem Server
+// per .htaccess geschützt; dieses Gerät merkt sich Name und Kennwort und schickt sie mit.
+// Abgleich: beim Öffnen, beim Zurückwechseln in die App und sonst alle 30 Sekunden.
+const API='api/';
+const TABLES=['items','cats'];
+const rev={items:0,cats:0}, pending={items:false,cats:false}, inFlight={items:null,cats:null};
+
+function setSyncing(state){
   const d=document.getElementById('sync-dot');
   if(!d) return;
-  d.className='sync-dot '+(on?'syncing':'ok');
-  if(!on) setTimeout(()=>{ const el=document.getElementById('sync-dot'); if(el&&el.className==='sync-dot ok') el.className='sync-dot'; },2000);
+  d.className='sync-dot '+(state===true?'syncing':state==='err'?'err':'ok');
+  d.title=state==='err'?'Nicht gespeichert – wird erneut versucht':'';
+  if(state===false) setTimeout(()=>{ const el=document.getElementById('sync-dot'); if(el&&el.className==='sync-dot ok') el.className='sync-dot'; },2000);
 }
 
-async function supaGet(table){
-  try {
-    const r = await fetch(`${SUPA_URL}/rest/v1/${table}?id=eq.1&select=data`, {headers:HEADERS});
-    if(!r.ok) return null;
-    const rows = await r.json();
-    if(rows&&rows.length>0&&rows[0].data) return rows[0].data;
-  } catch(e){}
-  return null;
+async function api(query,opt={}){
+  const login=localStorage.getItem('spence-login');
+  const headers={...(opt.headers||{})};
+  if(login) headers['Authorization']='Basic '+login;
+  const r=await fetch(API+query,{...opt,headers,cache:'no-store'});
+  if(r.status===401){askLogin();throw new Error('401');}
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return r.json();
 }
 
-async function supaSet(table, data){
+async function apiGet(table){
+  try{ const j=await api('?t='+table); rev[table]=j.rev; return j.data; }
+  catch(e){ return null; }
+}
+
+// Speichern nacheinander je Dokument: was während einer Speicherung dazukommt,
+// geht mit der nächsten raus. Schlägt es fehl, bleibt es vorgemerkt.
+function apiSet(table){
+  localStorage.setItem('spence-'+table, JSON.stringify(table==='items'?items:cats));
+  pending[table]=true;
+  if(!inFlight[table]) inFlight[table]=flush(table);
+}
+async function flush(table){
   setSyncing(true);
-  try {
-    await fetch(`${SUPA_URL}/rest/v1/${table}`, {
-      method:'POST', headers:HEADERS, body:JSON.stringify({id:1, data})
-    });
+  try{
+    while(pending[table]){
+      pending[table]=false;
+      const data=table==='items'?items:cats;
+      const j=await api('?t='+table,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({data})});
+      rev[table]=j.rev;
+    }
     setSyncing(false);
-  } catch(e){setSyncing(false);}
-  localStorage.setItem('spence-'+table, JSON.stringify(data));
-}
-
-// ── REALTIME ──────────────────────────────────────────────────────────────────
-let rtWs = null, rtPing = null, rtRef = 0;
-
-function connectRealtime(){
-  if(rtWs) return;
-  try {
-    rtWs = new WebSocket(`wss://vspjzyqtkbydyddtxyxn.supabase.co/realtime/v1/websocket?apikey=${SUPA_KEY}&vsn=1.0.0`);
-
-    rtWs.onopen = () => {
-      // subscribe to postgres changes on both tables
-      ['items','cats'].forEach(t => {
-        rtWs.send(JSON.stringify({
-          topic:`realtime:public:${t}`,
-          event:'phx_join',
-          payload:{
-            config:{
-              postgres_changes:[{event:'*',schema:'public',table:t}]
-            }
-          },
-          ref: String(++rtRef)
-        }));
-      });
-      rtPing = setInterval(()=>{
-        if(rtWs&&rtWs.readyState===1)
-          rtWs.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++rtRef)}));
-      }, 20000);
-    };
-
-    rtWs.onmessage = async (e) => {
-      try {
-        const msg = JSON.parse(e.data);
-        // any postgres change event → reload that table from server
-        if(msg.event==='postgres_changes'||(msg.payload&&msg.payload.type==='broadcast')){
-          const t = msg.topic?.split(':')[2]; // realtime:public:items → items
-          if(t==='items'||t==='cats') await reloadTable(t);
-        }
-        // also catch INSERT/UPDATE/DELETE events wrapped differently
-        if(msg.payload&&msg.payload.data&&msg.payload.data.table){
-          await reloadTable(msg.payload.data.table);
-        }
-      } catch(err){}
-    };
-
-    rtWs.onclose = () => {
-      rtWs=null; clearInterval(rtPing);
-      setTimeout(connectRealtime, 3000);
-    };
-    rtWs.onerror = () => { rtWs?.close(); };
-  } catch(e){}
+  }catch(e){ pending[table]=true; setSyncing('err'); }
+  finally{ inFlight[table]=null; }
 }
 
 async function reloadTable(table){
-  const remote = await supaGet(table);
+  const remote = await apiGet(table);
   if(!remote) return;
-  if(table==='items'){
-    items=remote;
-    localStorage.setItem('spence-items',JSON.stringify(items));
-  }
-  if(table==='cats'){
-    cats=remote;
-    localStorage.setItem('spence-cats',JSON.stringify(cats));
-  }
-  render();
+  if(table==='items') items=remote;
+  if(table==='cats') cats=remote;
+  localStorage.setItem('spence-'+table,JSON.stringify(remote));
+  render(); refreshArchBtn();
+}
+
+async function poll(){
+  if(document.hidden) return;
+  TABLES.forEach(t=>{ if(pending[t]&&!inFlight[t]) inFlight[t]=flush(t); });
+  try{
+    const stand=await api('?t=stand');
+    for(const t of TABLES) if(stand[t]!==rev[t]&&!pending[t]&&!inFlight[t]) await reloadTable(t);
+  }catch(e){}
+}
+
+// ── ANMELDUNG ─────────────────────────────────────────────────────────────────
+function askLogin(){
+  const o=document.getElementById('login-overlay');
+  if(o.classList.contains('open')) return;
+  document.getElementById('login-pass').value='';
+  openSheet('login-overlay');
+}
+function saveLogin(){
+  const u=document.getElementById('login-user').value.trim(), p=document.getElementById('login-pass').value;
+  if(!u||!p) return;
+  localStorage.setItem('spence-login', btoa(unescape(encodeURIComponent(u+':'+p))));
+  closeSheet('login-overlay');
+  loadFromServer().then(poll);
 }
 
 // migrate old key if needed
@@ -408,7 +485,7 @@ if(!localStorage.getItem('spence-items')&&localStorage.getItem('d10-items')){
   localStorage.setItem('spence-cats',localStorage.getItem('d10-cats'));
 }
 
-// start with local cache, then load from supabase
+// start with local cache, then load from the server
 let cats  = JSON.parse(localStorage.getItem('spence-cats')  || 'null') || ['Bad','Haushalt','Kleidung','Küche','Sonstige'];
 let items = JSON.parse(localStorage.getItem('spence-items') || 'null') || makeDemo();
 let editId=null, selType=null, sortOutId=null, filt='all', curPage='list', showArch=false, draftCats=[];
@@ -429,13 +506,13 @@ function makeDemo(){
 }
 
 function persist(){
-  supaSet('items', items);
-  supaSet('cats', cats);
+  apiSet('items');
+  apiSet('cats');
 }
 
-async function loadFromSupabase(){
+async function loadFromServer(){
   setSyncing(true);
-  const [remoteItems, remoteCats] = await Promise.all([supaGet('items'), supaGet('cats')]);
+  const [remoteItems, remoteCats] = await Promise.all([apiGet('items'), apiGet('cats')]);
   let changed = false;
   if(remoteItems){items=remoteItems;localStorage.setItem('spence-items',JSON.stringify(items));changed=true;}
   if(remoteCats){cats=remoteCats;localStorage.setItem('spence-cats',JSON.stringify(cats));changed=true;}
@@ -541,15 +618,26 @@ function updateWearCalc(){
 }
 
 // ── RENDER LIST ───────────────────────────────────────────────────────────────
+const ICONS={
+  plus:'<svg class="icon" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9"/></svg>',
+  chevron:'<svg class="icon" viewBox="0 0 16 16"><path d="M6 3.5 10.5 8 6 12.5"/></svg>',
+  play:'<svg class="icon" viewBox="0 0 16 16"><path d="M5 3.7v8.6l7-4.3z"/></svg>',
+  sortout:'<svg class="icon" viewBox="0 0 16 16"><rect x="2.75" y="3.25" width="10.5" height="2.8" rx=".5"/><path d="M3.9 6.05V12a1 1 0 0 0 1 1h6.2a1 1 0 0 0 1-1V6.05"/><path d="M8 7.3v3.3m0 0L6.6 9.2M8 10.6l1.4-1.4"/></svg>',
+  copy:'<svg class="icon" viewBox="0 0 16 16"><rect x="5.5" y="5.5" width="7.5" height="7.5" rx="1.2"/><path d="M10.5 5.5V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v5.5a1 1 0 0 0 1 1H5.5"/></svg>',
+  undo:'<svg class="icon" viewBox="0 0 16 16"><path d="M4.2 7.6A4.3 4.3 0 1 1 5.3 10.8"/><path d="M4.2 4.5v3.1h3.1"/></svg>',
+  trash:'<svg class="icon" viewBox="0 0 16 16"><path d="M3.5 4.5h9"/><path d="M6.4 4.5v-1a1 1 0 0 1 1-1h1.2a1 1 0 0 1 1 1v1"/><path d="M5.1 4.5 5.6 12.4a1 1 0 0 0 1 .9h2.8a1 1 0 0 0 1-.9l.5-7.9"/><path d="M7 6.6v4.8M9 6.6v4.8"/></svg>',
+  x:'<svg class="icon" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7"/></svg>'
+};
+const TYPE_LABEL={wear:'Verschleiß',durable:'Langlebig',consumable:'Verbrauch'};
 function rowHtml(it){
   const s=getStatus(it);
   const chips=s.chips.map(c=>`<span class="chip ${c.c}">${c.t}</span>`).join('');
   const product=it.product?`<span class="iproduct">${it.product}</span>`:'';
-  return `<div class="item-row${isStock(it)&&!it.archived?' stock-row':''}${it.archived?' archived-row':''}" onclick="openEditSheet('${it.id}')">
+  return `<div class="item-row ${it.type}${isStock(it)&&!it.archived?' stock-row':''}${it.archived?' archived-row':''}" title="${TYPE_LABEL[it.type]||''}" onclick="openEditSheet('${it.id}')">
     <div class="sdot ${s.dot}"></div>
-    <div class="inames"><span class="ikind">${dname(it)}</span>${product}</div>
+    <div class="inames"><span class="ikind">${dname(it)}</span><span class="isub">${product}</span></div>
     <div class="iinfo">${chips}</div>
-    <span class="chevron">›</span>
+    <span class="chevron">${ICONS.chevron}</span>
   </div>`;
 }
 
@@ -578,25 +666,38 @@ function renderList(){
   function secHtml(label,arr){
     if(!arr.length)return '';
     const g=byCat(arr),keys=catKeys(g);
-    let h=`<div class="section-header"><span class="section-label">${label}</span><div class="section-line"></div></div>`;
+    let h=`<section class="group"><div class="section-header"><span class="section-label">${label}</span><span class="count-pill">${arr.length}</span></div>`;
     const showCats=filt==='all';
     keys.forEach(cat=>{
       if(showCats) h+=`<div class="cat-header"><span class="cat-name">${cat}</span><span class="cat-count">${g[cat].length}</span></div>`;
       byUrg(g[cat]).forEach(it=>{h+=rowHtml(it);});
     });
-    return h;
+    return h+'</section>';
   }
 
   if(showArch){
     const g=byCat(vis),keys=catKeys(g);
-    let h=`<div class="section-header"><span class="section-label">Archiv</span><div class="section-line"></div></div>`;
+    let h=`<section class="group"><div class="section-header"><span class="section-label">Archiv</span><span class="count-pill">${vis.length}</span></div>`;
     keys.forEach(cat=>{
       h+=`<div class="cat-header"><span class="cat-name">${cat}</span><span class="cat-count">${g[cat].length}</span></div>`;
       g[cat].forEach(it=>{h+=rowHtml(it);});
     });
-    el.innerHTML=h;return;
+    el.innerHTML=h+'</section>';return;
   }
   el.innerHTML=secHtml('Aktiv',active)+secHtml('Vorrat',stock);
+}
+
+const WD=['So','Mo','Di','Mi','Do','Fr','Sa'];
+function addDays(n){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+n);return d;}
+function dm(d){return d.getDate()+'.'+(d.getMonth()+1)+'.';}
+function num(v){return v>=10?String(Math.round(v)):String(Math.round(v*10)/10).replace('.',',');}
+function restText(x){
+  const it=x.it;
+  if(it.type==='consumable'){
+    const rem=Math.max(0,it.qty-it.perDay*daysSince(it.openedAt));
+    return `noch ${num(rem)} ${it.unit||''}`.trim()+` von ${num(it.qty)}`;
+  }
+  return `Tag ${daysSince(it.activeStart)} von ${it.duration}`;
 }
 
 function renderVorschau(){
@@ -604,35 +705,36 @@ function renderVorschau(){
   const data=getVorschau();
   if(!data.length){el.innerHTML='<div class="empty">Keine Verbrauchsartikel mit bekanntem Verbrauch.</div>';return;}
 
-  const bald=data.filter(x=>x.daysLeft<=14);
-  const dem=data.filter(x=>x.daysLeft>14&&x.daysLeft<=60);
-  const sp=data.filter(x=>x.daysLeft>60);
+  // Wochen: ab dem Montag dieser Woche gezählt.
+  const toWk=d=>Math.floor((d+((new Date().getDay()+6)%7))/7);
+  const WK=[{n:'Diese Woche',lo:0,hi:0},{n:'Nächste Woche',lo:1,hi:1},{n:'In 2 – 4 Wochen',lo:2,hi:4},{n:'Später',lo:5,hi:1e9}];
 
   function vrRow(x){
-    const it=x.it;
-    const cls=x.daysLeft<=7?'danger':x.daysLeft<=14?'warn':'ok';
-    const product=it.product?`<div class="vr-product">${it.product}</div>`:'';
-    const daysText=x.daysLeft===0?'heute':x.daysLeft===1?'1 Tag':`${x.daysLeft} Tage`;
-    const cpdHtml=x.cpd?`<div style="font-size:11px;color:var(--durable);margin-top:2px">${x.cpd} €/T</div>`:'';
-    return `<div class="vorschau-row" onclick="openEditSheet('${it.id}')">
-      <div class="vr-names"><div class="vr-kind">${dname(it)}</div>${product}</div>
+    const it=x.it, d=addDays(x.daysLeft);
+    const sub=[it.product,restText(x)].filter(Boolean).join(' · ');
+    // Dringlichkeit als Zeichen wie die Priorität in klog: !! = binnen einer Woche, ! = binnen zwei.
+    const mark=x.daysLeft<=7?'!!':x.daysLeft<=14?'!':'';
+    const rel=x.daysLeft===0?'heute':x.daysLeft===1?'morgen':`in ${x.daysLeft} Tagen`;
+    return `<div class="vorschau-row ${it.type}" onclick="openEditSheet('${it.id}')">
+      <div class="sdot ok"></div>
+      <div class="vr-names"><div class="vr-kind">${dname(it)}</div><div class="vr-product">${sub}</div></div>
       <div class="vr-right">
-        <div class="vr-days ${cls}">${daysText}</div>
-        <div class="vr-label">${x.label||'bis leer'}</div>
-        ${cpdHtml}
-        <div class="vr-bar-wrap"><div class="vr-bar ${cls}" style="width:${Math.round(x.pct*100)}%"></div></div>
+        <div class="vr-date">${WD[d.getDay()]} ${dm(d)}</div>
+        <div class="vr-rel">${rel} ${x.label==='bis Wechsel'?'wechseln':'leer'}</div>
       </div>
+      <span class="vr-mark">${mark}</span>
     </div>`;
   }
+  const weeks=WK.map(w=>{
+    const arr=data.filter(x=>{const k=toWk(x.daysLeft);return k>=w.lo&&k<=w.hi;});
+    if(!arr.length) return '';
+    const mon=addDays(-((new Date().getDay()+6)%7)+7*w.lo);
+    const range=w.hi<1e9?`${dm(mon)} – ${dm(addDays(-((new Date().getDay()+6)%7)+7*w.hi+6))}`:'';
+    return `<section class="group"><div class="section-header"><span class="section-label">${w.n}<span class="section-sub">${range}</span></span><span class="count-pill">${arr.length}</span></div>${arr.map(vrRow).join('')}</section>`;
+  }).join('');
 
-  function grpHtml(label,arr){
-    if(!arr.length)return '';
-    return `<div class="section-header"><span class="section-label">${label}</span><div class="section-line"></div></div>${arr.map(vrRow).join('')}`;
-  }
-
-  el.innerHTML=grpHtml('Bald leer',bald)+grpHtml('Demnächst',dem)+grpHtml('Später',sp);
+  el.innerHTML=weeks;
 }
-
 function render(){renderList();renderVorschau();}
 
 // ── TABS ──────────────────────────────────────────────────────────────────────
@@ -714,13 +816,13 @@ function openEditSheet(id){
 function buildActions(it){
   const btns=[];
   if(!it.archived){
-    if(isStock(it)) btns.push({ico:'▶',label:'Aktivieren',cls:'primary-action',action:'activate'});
-    else btns.push({ico:'✕',label:'Aussortieren',cls:'',action:'sortout'});
-    btns.push({ico:'⊕',label:'Duplizieren',cls:'',action:'duplicate'});
+    if(isStock(it)) btns.push({ico:ICONS.play,label:'Aktivieren',cls:'primary-action',action:'activate'});
+    else btns.push({ico:ICONS.sortout,label:'Aussortieren',cls:'',action:'sortout'});
+    btns.push({ico:ICONS.copy,label:'Duplizieren',cls:'',action:'duplicate'});
   } else {
-    btns.push({ico:'↩',label:'Reaktivieren',cls:'primary-action',action:'unarchive'});
+    btns.push({ico:ICONS.undo,label:'Reaktivieren',cls:'primary-action',action:'unarchive'});
   }
-  btns.push({ico:'🗑',label:'Löschen',cls:'',action:'delete'});
+  btns.push({ico:ICONS.trash,label:'Löschen',cls:'',action:'delete'});
   document.getElementById('action-btns').innerHTML=btns.map(b=>`
     <button class="abtn ${b.cls}" data-action="${b.action}" data-id="${it.id}">
       <span class="aico">${b.ico}</span>${b.label}
@@ -884,9 +986,12 @@ function confirmSortOut(){
 }
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
+// Gruppenköpfe kleben direkt unter der Kopfzeile – deren Höhe hängt von Schrift und Breite ab.
+function syncHeadH(){document.documentElement.style.setProperty('--head-h',document.querySelector('.site-header').offsetHeight+'px');}
+syncHeadH(); addEventListener('resize',syncHeadH); document.fonts?.ready.then(syncHeadH);
 function openSheet(id){document.getElementById(id).classList.add('open');}
 function closeSheet(id){document.getElementById(id).classList.remove('open');}
-['edit-overlay','sortout-overlay','cat-overlay','confirm-overlay'].forEach(id=>{
+['edit-overlay','sortout-overlay','cat-overlay','confirm-overlay','login-overlay'].forEach(id=>{
   document.getElementById(id).addEventListener('click',e=>{
     if(e.target===document.getElementById(id))closeSheet(id);
   });
@@ -897,7 +1002,7 @@ function renderCatMgr(){
   document.getElementById('cat-mgr-list').innerHTML=draftCats.map((c,i)=>`
     <div class="cat-mgr-item">
       <input type="text" value="${c}" onchange="draftCats[${i}]=this.value">
-      <button class="cat-del-btn" onclick="draftCats.splice(${i},1);renderCatMgr()">×</button>
+      <button class="cat-del-btn" onclick="draftCats.splice(${i},1);renderCatMgr()" aria-label="Löschen">${ICONS.x}</button>
     </div>`).join('');
   document.getElementById('new-cat').value='';
 }
@@ -916,8 +1021,11 @@ function saveCats(){
 document.addEventListener('DOMContentLoaded', ()=>{
   refreshArchBtn();
   render();
-  loadFromSupabase();
-  connectRealtime();
+  loadFromServer();
+  setInterval(poll, 30000);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) poll(); });
+  addEventListener('focus', poll);
+  addEventListener('online', poll);
 });
 </script>
 </body>

@@ -1,14 +1,25 @@
 # --- Lizenzierte Schrift: NICHT ins öffentliche Repo ---
-# Die Font-Dateien sind domain-lizenziert und dürfen nicht öffentlich
-# im Repo liegen. Sie existieren lokal im Ordner /fonts und werden
-# ausschließlich über Netlify (Drop/CLI) auf die lizenzierte Domain
-# ausgeliefert. Hier bewusst ausgeschlossen — der Ordner selbst wird
-# über fonts/README.md dokumentiert.
-/fonts/*.woff2
-/fonts/*.woff
-/fonts/*.otf
-/fonts/*.ttf
-/fonts/*.eot
+# Spence hat keine eigene Kopie mehr: lokal liefert dev-router.php die Schrift aus
+# der gemeinsamen Ablage ~/Sites/alltagstudio/public/fonts, auf dem Server lädt die
+# Seite sie von https://alltag.studio/fonts/. Falls doch einmal eine Datei hier landet:
+*.woff2
+*.woff
+*.otf
+*.ttf
+*.eot
+
+# Daten: lokale Datenbank und ihre Sicherungen (auf dem Server: spence/app/)
+/app/
+# Einmalige Exporte aus Supabase
+/daten/
+
+# Hochladen: zusammengestellter Stand und das Ziel (Benutzer, Server, Pfad)
+/dist/
+/deploy/spence.ziel
 
 # macOS
 .DS_Store
+
+# Lokaler Server
+.spence-server.pid
+starten.log
